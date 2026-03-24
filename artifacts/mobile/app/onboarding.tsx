@@ -1,12 +1,11 @@
 import React, { useState, useRef } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
+  Animated,
+  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -18,103 +17,81 @@ import { COLORS } from "@/constants/colors";
 import { PERSONALITY_TYPES } from "@/data/mockData";
 import { useApp } from "@/context/AppContext";
 import { TypeBadge } from "@/components/TypeBadge";
-import { GlassCard } from "@/components/GlassCard";
 
-type Step = "welcome" | "know-type" | "select-type" | "ai-chat" | "agree-refine" | "complete";
+const { width } = Dimensions.get("window");
 
-const AI_QUESTIONS = [
-  "Do you prefer spending time alone to recharge, or do you gain energy from social interactions?",
-  "When making decisions, do you rely more on logic and data, or on feelings and values?",
-  "Do you prefer having a structured plan, or do you like staying flexible and spontaneous?",
-  "Are you more drawn to abstract ideas and future possibilities, or concrete facts and present realities?",
+type Step = "type-select" | "test" | "complete";
+
+// Row of personality type cards in reference style
+const TYPE_ROWS = [
+  ["INTJ", "INTP", "ENTJ", "ENTP"],
+  ["INFJ", "INFP", "ENFJ", "ENFP"],
+  ["ISTJ", "ISFJ", "ESTJ", "ESFJ"],
+  ["ISTP", "ISFP", "ESTP", "ESFP"],
 ];
 
-const AI_RESPONSES: Record<string, string> = {
-  "0-alone": "Interesting — that sounds like Introversion (I). Let me dig deeper...",
-  "0-social": "That sounds like Extraversion (E). You're energized by the world around you!",
-  "1-logic": "Your preference for logic suggests Thinking (T) in the cognitive stack.",
-  "1-feelings": "Prioritizing values and empathy suggests Feeling (F) in your profile.",
-  "2-structured": "A preference for structure indicates Judging (J) — you like closure.",
-  "2-flexible": "Loving flexibility suggests Perceiving (P) — you thrive in open-ended situations.",
-  "3-abstract": "Abstract thinking strongly suggests iNtuition (N) as your information gathering function.",
-  "3-concrete": "Grounded in facts? That's Sensing (S) — you trust what's real and present.",
+// Avatar placeholder colors per type
+const TYPE_AVATAR_COLORS: Record<string, string> = {
+  INTJ: "#5C3D8F", INTP: "#3D4F8F", ENTJ: "#7A3D8F", ENTP: "#5C3D8F",
+  INFJ: "#3D7A8A", INFP: "#3D6A8F", ENFJ: "#3D7A8A", ENFP: "#3D5A8F",
+  ISTJ: "#6B4C2A", ISFJ: "#5A5055", ESTJ: "#7A5C1A", ESFJ: "#4A5060",
+  ISTP: "#8F2A2A", ISFP: "#8F2A5C", ESTP: "#8F6020", ESFP: "#8F2020",
 };
+
+const TYPE_AVATARS: Record<string, string> = {
+  INTJ: "🧐", INTP: "🤓", ENTJ: "👑", ENTP: "💡",
+  INFJ: "🔮", INFP: "🌙", ENFJ: "🌟", ENFP: "✨",
+  ISTJ: "📋", ISFJ: "🌺", ESTJ: "⚖️", ESFJ: "🤝",
+  ISTP: "🔧", ISFP: "🎨", ESTP: "⚡", ESFP: "🎉",
+};
+
+const QUIZ_QUESTIONS = [
+  {
+    q: "After a long day, you feel most recharged by...",
+    a: ["Time alone, reflecting", "Being with friends"],
+    dim: ["I", "E"],
+  },
+  {
+    q: "When solving a problem, you prefer...",
+    a: ["Abstract patterns & theories", "Concrete facts & experience"],
+    dim: ["N", "S"],
+  },
+  {
+    q: "When making decisions, you rely more on...",
+    a: ["Logic & objective analysis", "Feelings & personal values"],
+    dim: ["T", "F"],
+  },
+  {
+    q: "In your daily life, you prefer...",
+    a: ["Having a clear plan & schedule", "Going with the flow"],
+    dim: ["J", "P"],
+  },
+];
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const { updateProfile } = useApp();
-  const [step, setStep] = useState<Step>("welcome");
-  const [selectedType, setSelectedType] = useState("");
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "ai" | "user"; text: string }>>([
-    { role: "ai", text: "Hi! I'm your PersonaDB AI guide. I'll help you discover your personality type through a few questions. Ready? Let's begin!" },
-  ]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [inputText, setInputText] = useState("");
-  const scrollRef = useRef<ScrollView>(null);
-  const [suggestedType, setSuggestedType] = useState("INTJ");
+  const [step, setStep] = useState<Step>("type-select");
+  const [showTestCard, setShowTestCard] = useState(true);
+  const [quizIdx, setQuizIdx] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState("");
+  const progressAnim = useRef(new Animated.Value(0.05)).current;
 
-  const aiQuickReplies = [
-    ["I prefer alone time", "I love being social"],
-    ["I rely on logic", "I go with my feelings"],
-    ["I like having a plan", "I stay flexible"],
-    ["I love abstract ideas", "I prefer concrete facts"],
-  ];
-
-  const handleQuickReply = (reply: string, optionIdx: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const key = `${currentQuestion}-${optionIdx === 0 ? ["alone", "logic", "structured", "abstract"][currentQuestion] : ["social", "feelings", "flexible", "concrete"][currentQuestion]}`;
-    const aiReply = AI_RESPONSES[key] || "Fascinating answer! I'm learning more about you...";
-
-    const newMessages = [
-      ...chatMessages,
-      { role: "user" as const, text: reply },
-      { role: "ai" as const, text: aiReply },
-    ];
-    setChatMessages(newMessages);
-    setAnswers([...answers, optionIdx === 0 ? "0" : "1"]);
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-
-    if (currentQuestion < AI_QUESTIONS.length - 1) {
-      setTimeout(() => {
-        setChatMessages((prev) => [
-          ...prev,
-          { role: "ai", text: AI_QUESTIONS[currentQuestion + 1] },
-        ]);
-        setCurrentQuestion(currentQuestion + 1);
-        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-      }, 1200);
-    } else {
-      const newAnswers = [...answers, optionIdx === 0 ? "0" : "1"];
-      const e = newAnswers[0] === "1" ? "E" : "I";
-      const n = newAnswers[3] === "0" ? "N" : "S";
-      const t = newAnswers[1] === "0" ? "T" : "F";
-      const j = newAnswers[2] === "0" ? "J" : "P";
-      const type = `${e}${n}${t}${j}`;
-      setSuggestedType(type);
-      setTimeout(() => {
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            text: `Based on your answers, I believe you're most likely an **${type}**! Does this resonate with you?`,
-          },
-        ]);
-        setTimeout(() => setStep("agree-refine"), 1500);
-        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-      }, 1500);
-    }
+  const animateProgress = (to: number) => {
+    Animated.timing(progressAnim, { toValue: to, duration: 400, useNativeDriver: false }).start();
   };
 
-  const handleAgree = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    updateProfile({ mbti: suggestedType });
-    setStep("complete");
+  const handleStartTest = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowTestCard(false);
+    setStep("test");
+    animateProgress(0.15);
   };
 
-  const handleRefine = () => {
+  const handleKnowMyType = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setStep("select-type");
+    setShowTestCard(false);
   };
 
   const handleSelectType = (code: string) => {
@@ -125,190 +102,167 @@ export default function OnboardingScreen() {
   const handleConfirmType = () => {
     if (!selectedType) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    updateProfile({ mbti: selectedType });
+    updateProfile({ mbti: selectedType } as any);
     setStep("complete");
+    animateProgress(1);
   };
 
+  const handleAnswer = (dimChar: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newAnswers = [...answers, dimChar];
+    setAnswers(newAnswers);
+    const progress = 0.15 + (newAnswers.length / QUIZ_QUESTIONS.length) * 0.85;
+    animateProgress(progress);
+
+    if (quizIdx < QUIZ_QUESTIONS.length - 1) {
+      setQuizIdx(quizIdx + 1);
+    } else {
+      // Compute type
+      const e = newAnswers[0] || "I";
+      const n = newAnswers[1] || "N";
+      const t = newAnswers[2] || "T";
+      const j = newAnswers[3] || "J";
+      const type = `${e}${n}${t}${j}`;
+      updateProfile({ mbti: type } as any);
+      setSelectedType(type);
+      setTimeout(() => {
+        setStep("complete");
+        animateProgress(1);
+      }, 400);
+    }
+  };
+
+  const handleDone = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    router.replace("/(tabs)");
+  };
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
+  });
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}>
-      {/* Header */}
-      {step !== "welcome" && step !== "complete" && (
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Feather name="x" size={22} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Type Discovery</Text>
-          <View style={{ width: 22 }} />
-        </View>
-      )}
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Progress bar */}
+      <View style={styles.progressBg}>
+        <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+      </View>
 
-      {/* Welcome */}
-      {step === "welcome" && (
-        <View style={styles.welcomeContainer}>
-          <View style={styles.logoContainer}>
-            <Ionicons name="sparkles" size={56} color={COLORS.accent} />
-          </View>
-          <Text style={styles.welcomeTitle}>Welcome to PersonaDB</Text>
-          <Text style={styles.welcomeSub}>
-            The world's most advanced personality database. Discover who you are, find your tribe, and understand the people around you.
-          </Text>
-          <GlassCard style={styles.welcomeCard}>
-            <View style={styles.welcomeFeature}>
-              <Ionicons name="analytics" size={22} color={COLORS.accent} />
-              <Text style={styles.welcomeFeatureText}>MBTI · Enneagram · Socionics · Big 5</Text>
-            </View>
-            <View style={styles.welcomeFeature}>
-              <Ionicons name="people" size={22} color={COLORS.accentBlue} />
-              <Text style={styles.welcomeFeatureText}>10+ type communities, 50,000+ members</Text>
-            </View>
-            <View style={styles.welcomeFeature}>
-              <Ionicons name="heart" size={22} color={COLORS.accentRed} />
-              <Text style={styles.welcomeFeatureText}>AI-powered chemistry & compatibility</Text>
-            </View>
-          </GlassCard>
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => setStep("know-type")}>
-            <Text style={styles.primaryBtnText}>Get Started</Text>
-            <Feather name="arrow-right" size={18} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Know your type? */}
-      {step === "know-type" && (
+      {/* Type Select step */}
+      {step === "type-select" && (
         <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Do you know your MBTI type?</Text>
-          <Text style={styles.stepSub}>We'll customize your experience based on your type.</Text>
-          <View style={styles.yesNoRow}>
-            <TouchableOpacity
-              style={styles.yesBtn}
-              onPress={() => setStep("select-type")}
-            >
-              <Ionicons name="checkmark-circle" size={28} color={COLORS.accentGreen} />
-              <Text style={styles.yesBtnText}>Yes, I know my type</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.noBtn}
-              onPress={() => setStep("ai-chat")}
-            >
-              <Ionicons name="sparkles" size={28} color={COLORS.accent} />
-              <Text style={styles.noBtnText}>Help me discover it</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+          <Text style={styles.welcomeText}>😌 Welcome! What is your{"\n"}personality type?</Text>
 
-      {/* Select type manually */}
-      {step === "select-type" && (
-        <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Select your MBTI type</Text>
-          <Text style={styles.stepSub}>Tap your type to select it.</Text>
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-            <View style={styles.typeGrid}>
-              {PERSONALITY_TYPES.map((t) => {
-                const isSelected = selectedType === t.code;
-                return (
-                  <TouchableOpacity
-                    key={t.code}
-                    style={[styles.typeGridItem, isSelected && { borderColor: t.color, backgroundColor: t.color + "20" }]}
-                    onPress={() => handleSelectType(t.code)}
-                  >
-                    <Text style={[styles.typeGridCode, { color: isSelected ? t.color : COLORS.textPrimary }]}>{t.code}</Text>
-                    <Text style={styles.typeGridName} numberOfLines={1}>{t.name}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+          {/* Test card overlay */}
+          {showTestCard && (
+            <View style={styles.testCardOverlay}>
+              <View style={styles.testCard}>
+                <Text style={styles.testCardTitle}>Take a quick personality test</Text>
+                <Text style={styles.testCardSub}>Discover your unique traits, and compatible types!</Text>
+                <TouchableOpacity style={styles.startTestBtn} onPress={handleStartTest}>
+                  <Text style={styles.startTestText}>Start Test (2 min)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleKnowMyType}>
+                  <Text style={styles.alreadyKnowText}>I already know my personality type</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+          )}
+
+          {/* Type grid - scrollable behind the card */}
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.typeScroll} contentContainerStyle={styles.typeScrollContent}>
+            {TYPE_ROWS.map((row, rowIdx) => (
+              <View key={rowIdx} style={styles.typeRow}>
+                {row.map((code) => {
+                  const isSelected = selectedType === code;
+                  const typeData = PERSONALITY_TYPES.find((t) => t.code === code);
+                  const avatarBg = TYPE_AVATAR_COLORS[code] || "#333";
+                  return (
+                    <TouchableOpacity
+                      key={code}
+                      style={[styles.typeCard, isSelected && styles.typeCardSelected]}
+                      onPress={() => handleSelectType(code)}
+                      activeOpacity={0.75}
+                    >
+                      <View style={[styles.typeAvatarBg, { backgroundColor: avatarBg }]}>
+                        <Text style={styles.typeAvatarEmoji}>{TYPE_AVATARS[code] || "🧠"}</Text>
+                      </View>
+                      <Text style={styles.typeCode}>{code}</Text>
+                      <Text style={styles.typeName} numberOfLines={1}>{typeData?.name.replace("The ", "") || ""}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ))}
           </ScrollView>
-          {selectedType && (
-            <TouchableOpacity style={styles.primaryBtn} onPress={handleConfirmType}>
-              <Text style={styles.primaryBtnText}>Confirm {selectedType}</Text>
-              <Feather name="arrow-right" size={18} color={COLORS.textPrimary} />
-            </TouchableOpacity>
+
+          {/* Bottom actions */}
+          {!showTestCard && (
+            <View style={[styles.bottomActions, { paddingBottom: insets.bottom + 16 }]}>
+              <TouchableOpacity style={styles.dontKnowBtn}>
+                <Text style={styles.dontKnowText}>I don't know my type</Text>
+              </TouchableOpacity>
+              {selectedType ? (
+                <TouchableOpacity style={styles.arrowBtn} onPress={handleConfirmType}>
+                  <Feather name="arrow-right" size={22} color="#FFF" />
+                </TouchableOpacity>
+              ) : (
+                <View style={[styles.arrowBtn, { opacity: 0.3 }]}>
+                  <Feather name="arrow-right" size={22} color="#FFF" />
+                </View>
+              )}
+            </View>
           )}
         </View>
       )}
 
-      {/* AI Chat */}
-      {step === "ai-chat" && (
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <Text style={styles.stepTitle}>AI Type Discovery</Text>
-          <Text style={styles.stepSub}>Answer a few questions and I'll analyze your type.</Text>
-          <ScrollView
-            ref={scrollRef}
-            style={styles.chatScroll}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.chatContent}
-            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-          >
-            {chatMessages.map((msg, i) => (
-              <View key={i} style={[styles.bubble, msg.role === "user" ? styles.userBubble : styles.aiBubble]}>
-                {msg.role === "ai" && (
-                  <View style={styles.aiAvatar}>
-                    <Ionicons name="sparkles" size={14} color={COLORS.accent} />
-                  </View>
-                )}
-                <View style={[styles.bubbleInner, msg.role === "user" ? styles.userBubbleInner : styles.aiBubbleInner]}>
-                  <Text style={[styles.bubbleText, msg.role === "user" && styles.userBubbleText]}>
-                    {msg.text.replace(/\*\*/g, "")}
-                  </Text>
-                </View>
-              </View>
+      {/* Quiz / Test step */}
+      {step === "test" && (
+        <View style={[styles.stepContainer, styles.quizContainer]}>
+          <View style={styles.quizProgress}>
+            <Text style={styles.quizProgressText}>{quizIdx + 1} / {QUIZ_QUESTIONS.length}</Text>
+          </View>
+          <Text style={styles.quizQuestion}>{QUIZ_QUESTIONS[quizIdx].q}</Text>
+          <View style={styles.quizOptions}>
+            {QUIZ_QUESTIONS[quizIdx].a.map((opt, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={styles.quizOption}
+                onPress={() => handleAnswer(QUIZ_QUESTIONS[quizIdx].dim[idx])}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.quizOptionText}>{opt}</Text>
+                <Feather name="chevron-right" size={18} color={COLORS.textTertiary} />
+              </TouchableOpacity>
             ))}
-
-            {/* Quick replies for current question */}
-            {currentQuestion < AI_QUESTIONS.length && step === "ai-chat" && chatMessages.length > 0 && chatMessages[chatMessages.length - 1].role === "ai" && !chatMessages[chatMessages.length - 1].text.includes("believe you") && (
-              <View style={styles.quickReplies}>
-                {aiQuickReplies[currentQuestion]?.map((reply, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={styles.quickReply}
-                    onPress={() => handleQuickReply(reply, idx)}
-                  >
-                    <Text style={styles.quickReplyText}>{reply}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      )}
-
-      {/* Agree or Refine */}
-      {step === "agree-refine" && (
-        <View style={styles.stepContainer}>
-          <View style={styles.resultContainer}>
-            <Ionicons name="sparkles" size={40} color={COLORS.accent} />
-            <Text style={styles.stepTitle}>Your Type: {suggestedType}</Text>
-            <Text style={styles.stepSub}>
-              {PERSONALITY_TYPES.find((t) => t.code === suggestedType)?.name}
-            </Text>
-            <TypeBadge type={suggestedType} size="lg" />
-            <Text style={styles.resultNote}>
-              {PERSONALITY_TYPES.find((t) => t.code === suggestedType)?.tagline}
-            </Text>
           </View>
-          <View style={styles.agreeRefineRow}>
-            <TouchableOpacity style={styles.agreeBtn} onPress={handleAgree}>
-              <Ionicons name="checkmark-circle" size={20} color={COLORS.textPrimary} />
-              <Text style={styles.agreeBtnText}>Yes, that's me!</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.refineBtn} onPress={handleRefine}>
-              <Feather name="edit-2" size={18} color={COLORS.accent} />
-              <Text style={styles.refineBtnText}>Refine / Change</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Feather name="arrow-left" size={18} color={COLORS.textSecondary} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
         </View>
       )}
 
-      {/* Complete */}
+      {/* Complete step */}
       {step === "complete" && (
-        <View style={styles.completeContainer}>
-          <Ionicons name="checkmark-circle" size={72} color={COLORS.accentGreen} />
-          <Text style={styles.completeTitle}>You're all set!</Text>
-          <Text style={styles.completeSub}>Welcome to PersonaDB. Your type profile is ready.</Text>
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => router.back()}>
-            <Text style={styles.primaryBtnText}>Enter PersonaDB</Text>
-            <Feather name="arrow-right" size={18} color={COLORS.textPrimary} />
+        <View style={[styles.stepContainer, styles.completeContainer, { paddingBottom: insets.bottom + 24 }]}>
+          <View style={styles.completeIcon}>
+            <Ionicons name="checkmark-circle" size={64} color={COLORS.accentGreen} />
+          </View>
+          <Text style={styles.completeTitle}>You're {selectedType}!</Text>
+          <Text style={styles.completeSub}>
+            {PERSONALITY_TYPES.find((t) => t.code === selectedType)?.name || "The Thinker"}
+          </Text>
+          <Text style={styles.completeTagline}>
+            {PERSONALITY_TYPES.find((t) => t.code === selectedType)?.tagline || ""}
+          </Text>
+          <View style={styles.typeShowcase}>
+            <Text style={[styles.typeShowcaseCode, { color: COLORS.typeColor }]}>{selectedType}</Text>
+          </View>
+          <TouchableOpacity style={styles.enterBtn} onPress={handleDone}>
+            <Text style={styles.enterBtnText}>Enter PersonaDB</Text>
+            <Feather name="arrow-right" size={18} color="#FFF" />
           </TouchableOpacity>
         </View>
       )}
@@ -317,52 +271,47 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 24 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 },
-  headerTitle: { color: COLORS.textPrimary, fontFamily: "Inter_600SemiBold", fontSize: 17 },
-  welcomeContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 20 },
-  logoContainer: { width: 100, height: 100, borderRadius: 28, backgroundColor: COLORS.accentDim, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: COLORS.accent + "40" },
-  welcomeTitle: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 28, textAlign: "center" },
-  welcomeSub: { color: COLORS.textSecondary, fontFamily: "Inter_400Regular", fontSize: 15, textAlign: "center", lineHeight: 24 },
-  welcomeCard: { width: "100%", gap: 14 },
-  welcomeFeature: { flexDirection: "row", alignItems: "center", gap: 12 },
-  welcomeFeatureText: { color: COLORS.textPrimary, fontFamily: "Inter_500Medium", fontSize: 14 },
-  primaryBtn: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: COLORS.accent, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 28, width: "100%", justifyContent: "center" },
-  primaryBtnText: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 17 },
-  stepContainer: { flex: 1, gap: 16 },
-  stepTitle: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 24, lineHeight: 32 },
-  stepSub: { color: COLORS.textSecondary, fontFamily: "Inter_400Regular", fontSize: 15 },
-  yesNoRow: { gap: 14, flex: 1, justifyContent: "center" },
-  yesBtn: { flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: COLORS.accentGreen + "15", borderRadius: 18, padding: 20, borderWidth: 1, borderColor: COLORS.accentGreen + "40" },
-  yesBtnText: { color: COLORS.accentGreen, fontFamily: "Inter_600SemiBold", fontSize: 17 },
-  noBtn: { flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: COLORS.accentDim, borderRadius: 18, padding: 20, borderWidth: 1, borderColor: COLORS.accent + "40" },
-  noBtnText: { color: COLORS.accent, fontFamily: "Inter_600SemiBold", fontSize: 17 },
-  typeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, paddingBottom: 20 },
-  typeGridItem: { width: "22%", borderRadius: 14, borderWidth: 1.5, borderColor: COLORS.glassBorder, backgroundColor: COLORS.bgCard, padding: 10, alignItems: "center", gap: 4 },
-  typeGridCode: { fontFamily: "Inter_700Bold", fontSize: 15 },
-  typeGridName: { color: COLORS.textTertiary, fontFamily: "Inter_400Regular", fontSize: 9, textAlign: "center" },
-  chatScroll: { flex: 1 },
-  chatContent: { gap: 12, paddingTop: 8, paddingBottom: 16 },
-  bubble: { flexDirection: "row", gap: 8 },
-  userBubble: { justifyContent: "flex-end" },
-  aiBubble: { justifyContent: "flex-start", alignItems: "flex-end" },
-  aiAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.accentDim, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: COLORS.accent + "40" },
-  bubbleInner: { maxWidth: "80%", borderRadius: 18, padding: 14 },
-  aiBubbleInner: { backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.glassBorder },
-  userBubbleInner: { backgroundColor: COLORS.accent },
-  bubbleText: { color: COLORS.textPrimary, fontFamily: "Inter_400Regular", fontSize: 14, lineHeight: 22 },
-  userBubbleText: { color: COLORS.textPrimary },
-  quickReplies: { gap: 8, marginTop: 4 },
-  quickReply: { backgroundColor: COLORS.bgCard, borderRadius: 14, borderWidth: 1, borderColor: COLORS.accent + "50", padding: 12 },
-  quickReplyText: { color: COLORS.accent, fontFamily: "Inter_500Medium", fontSize: 14 },
-  resultContainer: { alignItems: "center", gap: 12, paddingVertical: 20 },
-  resultNote: { color: COLORS.textSecondary, fontFamily: "Inter_400Regular", fontSize: 14, textAlign: "center" },
-  agreeRefineRow: { gap: 12 },
-  agreeBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: COLORS.accentGreen, borderRadius: 16, padding: 16 },
-  agreeBtnText: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 16 },
-  refineBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: COLORS.accentDim, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: COLORS.accent + "40" },
-  refineBtnText: { color: COLORS.accent, fontFamily: "Inter_600SemiBold", fontSize: 16 },
-  completeContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 20 },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  progressBg: { height: 3, backgroundColor: "rgba(255,255,255,0.1)", marginHorizontal: 20, marginTop: 8, borderRadius: 2 },
+  progressFill: { height: 3, backgroundColor: COLORS.accentGreen, borderRadius: 2 },
+  stepContainer: { flex: 1, paddingHorizontal: 20 },
+  welcomeText: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 24, lineHeight: 34, marginTop: 28, marginBottom: 20 },
+  testCardOverlay: { ...StyleSheet.absoluteFillObject, top: 80, zIndex: 10, alignItems: "center", paddingHorizontal: 0 },
+  testCard: { backgroundColor: "#1E1E24", borderRadius: 24, padding: 24, width: "100%", alignItems: "center", gap: 14, shadowColor: "#000", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.6, shadowRadius: 24, elevation: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
+  testCardTitle: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 18, textAlign: "center" },
+  testCardSub: { color: COLORS.textSecondary, fontFamily: "Inter_400Regular", fontSize: 14, textAlign: "center", lineHeight: 22 },
+  startTestBtn: { width: "100%", backgroundColor: COLORS.accentGreen, borderRadius: 50, paddingVertical: 16, alignItems: "center" },
+  startTestText: { color: "#FFF", fontFamily: "Inter_700Bold", fontSize: 16 },
+  alreadyKnowText: { color: COLORS.textSecondary, fontFamily: "Inter_500Medium", fontSize: 14, marginTop: 4 },
+  typeScroll: { flex: 1 },
+  typeScrollContent: { gap: 10, paddingBottom: 100 },
+  typeRow: { flexDirection: "row", gap: 10 },
+  typeCard: { flex: 1, backgroundColor: COLORS.bgCard, borderRadius: 16, padding: 12, alignItems: "center", gap: 6, borderWidth: 1, borderColor: COLORS.glassBorder },
+  typeCardSelected: { borderColor: COLORS.accentGreen, borderWidth: 2 },
+  typeAvatarBg: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
+  typeAvatarEmoji: { fontSize: 26 },
+  typeCode: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 13 },
+  typeName: { color: COLORS.textTertiary, fontFamily: "Inter_400Regular", fontSize: 10, textAlign: "center" },
+  bottomActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 16 },
+  dontKnowBtn: { backgroundColor: COLORS.bgCard, borderRadius: 50, paddingHorizontal: 20, paddingVertical: 14, borderWidth: 1, borderColor: COLORS.glassBorder },
+  dontKnowText: { color: COLORS.textPrimary, fontFamily: "Inter_500Medium", fontSize: 14 },
+  arrowBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.accent, alignItems: "center", justifyContent: "center" },
+  quizContainer: { justifyContent: "center", gap: 24 },
+  quizProgress: { alignSelf: "center", backgroundColor: COLORS.bgCard, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1, borderColor: COLORS.glassBorder },
+  quizProgressText: { color: COLORS.textSecondary, fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  quizQuestion: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 20, lineHeight: 30, textAlign: "center" },
+  quizOptions: { gap: 12 },
+  quizOption: { backgroundColor: COLORS.bgCard, borderRadius: 16, padding: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: COLORS.glassBorder },
+  quizOptionText: { color: COLORS.textPrimary, fontFamily: "Inter_500Medium", fontSize: 15, flex: 1 },
+  backBtn: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "center", paddingVertical: 10 },
+  backText: { color: COLORS.textSecondary, fontFamily: "Inter_500Medium", fontSize: 14 },
+  completeContainer: { alignItems: "center", justifyContent: "center", gap: 16 },
+  completeIcon: { marginBottom: 8 },
   completeTitle: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 28 },
-  completeSub: { color: COLORS.textSecondary, fontFamily: "Inter_400Regular", fontSize: 15, textAlign: "center" },
+  completeSub: { color: COLORS.typeColor, fontFamily: "Inter_600SemiBold", fontSize: 18 },
+  completeTagline: { color: COLORS.textSecondary, fontFamily: "Inter_400Regular", fontSize: 14, textAlign: "center", lineHeight: 22 },
+  typeShowcase: { backgroundColor: COLORS.typeBg, borderRadius: 20, paddingHorizontal: 28, paddingVertical: 14, borderWidth: 1.5, borderColor: COLORS.typeColor + "50" },
+  typeShowcaseCode: { fontFamily: "Inter_700Bold", fontSize: 36, letterSpacing: 2 },
+  enterBtn: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: COLORS.accent, borderRadius: 50, paddingVertical: 16, paddingHorizontal: 32, marginTop: 8 },
+  enterBtnText: { color: "#FFF", fontFamily: "Inter_700Bold", fontSize: 16 },
 });
