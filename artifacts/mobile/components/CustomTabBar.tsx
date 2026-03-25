@@ -20,20 +20,18 @@ function getTabIcon(routeName: string, focused: boolean, color: string) {
   switch (routeName) {
     case "index": return <Feather name="search" size={sz} color={color} />;
     case "chats": return <Ionicons name={focused ? "chatbubble" : "chatbubble-outline"} size={sz} color={color} />;
-    case "communities": return <Ionicons name={focused ? "people" : "people-outline"} size={sz} color={color} />;
     case "profile": return <Ionicons name={focused ? "person-circle" : "person-circle-outline"} size={sz} color={color} />;
-    case "market": return <Ionicons name={focused ? "heart-circle" : "heart-circle-outline"} size={sz} color={color} />;
+    case "market": return <Ionicons name={focused ? "cash" : "cash-outline"} size={sz} color={color} />;
     default: return <Feather name="circle" size={sz} color={color} />;
   }
 }
 
 function getTabLabel(routeName: string) {
   switch (routeName) {
-    case "index": return "Personalities";
+    case "index": return "Explore";
     case "chats": return "Chats";
-    case "communities": return "Community";
     case "profile": return "Profile";
-    case "market": return "Market";
+    case "market": return "Coins";
     default: return routeName;
   }
 }
@@ -48,8 +46,11 @@ type TabItemProps = {
 const TabItem = memo(({ route, isFocused, onPress, unreadCount }: TabItemProps) => {
   const color = isFocused ? COLORS.accent : COLORS.tabInactive;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const handleIn = () => Animated.spring(scaleAnim, { toValue: 0.88, useNativeDriver: true, speed: 40 }).start();
-  const handleOut = () => Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 20 }).start();
+
+  const handleIn = () =>
+    Animated.spring(scaleAnim, { toValue: 0.86, useNativeDriver: true, speed: 40 }).start();
+  const handleOut = () =>
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 20 }).start();
 
   return (
     <Animated.View style={[styles.tabItem, { transform: [{ scale: scaleAnim }] }]}>
@@ -83,99 +84,116 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const soulIdx = state.routes.findIndex((r) => r.name === "soul");
   const isSoulActive = state.index === soulIdx;
 
-  const saturnPulse = useRef(new Animated.Value(1)).current;
-  const saturnGlow = useRef(new Animated.Value(0.3)).current;
+  // Keep native and non-native animations strictly separated on different Animated.Values
+  const saturnScale = useRef(new Animated.Value(1)).current; // useNativeDriver: true
+  const glowOpacity = useRef(new Animated.Value(0.3)).current; // useNativeDriver: false
 
   useEffect(() => {
-    const pulseAnim = Animated.loop(
+    const scaleLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(saturnPulse, { toValue: 1.07, duration: 2200, useNativeDriver: true }),
-        Animated.timing(saturnPulse, { toValue: 1, duration: 2200, useNativeDriver: true }),
+        Animated.timing(saturnScale, { toValue: 1.08, duration: 2200, useNativeDriver: true }),
+        Animated.timing(saturnScale, { toValue: 1, duration: 2200, useNativeDriver: true }),
       ])
     );
-    const glowAnim = Animated.loop(
+    const glowLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(saturnGlow, { toValue: 1, duration: 2800, useNativeDriver: false }),
-        Animated.timing(saturnGlow, { toValue: 0.2, duration: 2800, useNativeDriver: false }),
+        Animated.timing(glowOpacity, { toValue: 0.9, duration: 2800, useNativeDriver: false }),
+        Animated.timing(glowOpacity, { toValue: 0.2, duration: 2800, useNativeDriver: false }),
       ])
     );
-    pulseAnim.start();
-    glowAnim.start();
-    return () => { pulseAnim.stop(); glowAnim.stop(); };
+    scaleLoop.start();
+    glowLoop.start();
+    return () => {
+      scaleLoop.stop();
+      glowLoop.stop();
+    };
   }, []);
 
-  const leftRoutes = state.routes.slice(0, Math.floor(state.routes.length / 2));
-  const rightRoutes = state.routes.slice(Math.floor(state.routes.length / 2) + 1);
+  const leftRoutes = state.routes.slice(0, 2);
+  const rightRoutes = state.routes.slice(3);
   const soulRoute = state.routes[soulIdx];
 
   const handleTabPress = (route: { key: string; name: string }, isFocused: boolean) => {
     Haptics.selectionAsync();
     const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-    if (!isFocused && !event.defaultPrevented) {
-      navigation.navigate(route.name);
-    }
+    if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
   };
 
   const handleSoul = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (soulRoute) {
-      const event = navigation.emit({ type: "tabPress", target: soulRoute.key, canPreventDefault: true });
-      if (!isSoulActive && !event.defaultPrevented) {
-        navigation.navigate(soulRoute.name);
-      }
-    }
+    if (!soulRoute) return;
+    const event = navigation.emit({ type: "tabPress", target: soulRoute.key, canPreventDefault: true });
+    if (!isSoulActive && !event.defaultPrevented) navigation.navigate(soulRoute.name);
   };
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {isIOS ? (
-        <BlurView intensity={75} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
       ) : (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(10,10,12,0.97)" }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(9,9,11,0.97)" }]} />
       )}
       <View style={styles.topBorder} />
 
       <View style={styles.tabRow}>
-        {/* Left half */}
+        {/* Left 2 tabs */}
         <View style={styles.halfRow}>
-          {leftRoutes.map((route) => (
-            <TabItem
-              key={route.key}
-              route={route}
-              isFocused={state.index === state.routes.findIndex((r) => r.key === route.key)}
-              onPress={() => handleTabPress(route, state.index === state.routes.findIndex((r) => r.key === route.key))}
-              unreadCount={route.name === "chats" ? 6 : 0}
-            />
-          ))}
+          {leftRoutes.map((route) => {
+            const routeIdx = state.routes.findIndex((r) => r.key === route.key);
+            return (
+              <TabItem
+                key={route.key}
+                route={route}
+                isFocused={state.index === routeIdx}
+                onPress={() => handleTabPress(route, state.index === routeIdx)}
+                unreadCount={route.name === "chats" ? 6 : 0}
+              />
+            );
+          })}
         </View>
 
-        {/* Saturn center FAB */}
+        {/* Center Saturn FAB */}
         <View style={styles.saturnCenter}>
-          {/* Glow ring */}
-          <Animated.View style={[styles.saturnGlowOuter, { opacity: saturnGlow, transform: [{ scale: saturnPulse }] }]} />
-          <Animated.View style={{ transform: [{ scale: saturnPulse }] }}>
+          {/* Glow ring — ONLY non-native opacity, NO scale here */}
+          <Animated.View
+            style={[
+              styles.saturnGlowRing,
+              { opacity: glowOpacity },
+            ]}
+          />
+          {/* Planet button — ONLY native scale, NO opacity here */}
+          <Animated.View style={{ transform: [{ scale: saturnScale }] }}>
             <TouchableOpacity
               style={[styles.saturnFAB, isSoulActive && styles.saturnFABActive]}
               onPress={handleSoul}
-              activeOpacity={0.8}
+              activeOpacity={0.82}
             >
-              <SaturnIcon size={30} color={isSoulActive ? "#FFD580" : "#C8A84B"} ringColor={isSoulActive ? "#FFD580" : "#C8A84B"} />
+              <SaturnIcon
+                size={30}
+                color={isSoulActive ? "#FFD580" : "#C8A84B"}
+                ringColor={isSoulActive ? "#FFD580" : "#C8A84B"}
+              />
             </TouchableOpacity>
           </Animated.View>
-          <Text style={[styles.saturnLabel, isSoulActive && { color: "#FFD580" }]}>Soul</Text>
+          <Text style={[styles.saturnLabel, isSoulActive && { color: "#FFD580" }]}>
+            Soul
+          </Text>
         </View>
 
-        {/* Right half */}
+        {/* Right 2 tabs */}
         <View style={styles.halfRow}>
-          {rightRoutes.map((route) => (
-            <TabItem
-              key={route.key}
-              route={route}
-              isFocused={state.index === state.routes.findIndex((r) => r.key === route.key)}
-              onPress={() => handleTabPress(route, state.index === state.routes.findIndex((r) => r.key === route.key))}
-              unreadCount={0}
-            />
-          ))}
+          {rightRoutes.map((route) => {
+            const routeIdx = state.routes.findIndex((r) => r.key === route.key);
+            return (
+              <TabItem
+                key={route.key}
+                route={route}
+                isFocused={state.index === routeIdx}
+                onPress={() => handleTabPress(route, state.index === routeIdx)}
+                unreadCount={0}
+              />
+            );
+          })}
         </View>
       </View>
     </View>
@@ -212,10 +230,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     alignItems: "flex-end",
   },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-  },
+  tabItem: { flex: 1, alignItems: "center" },
   tabBtn: {
     alignItems: "center",
     paddingHorizontal: 2,
@@ -230,9 +245,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     position: "relative",
   },
-  tabIconWrapActive: {
-    backgroundColor: COLORS.accentDim,
-  },
+  tabIconWrapActive: { backgroundColor: COLORS.accentDim },
   badge: {
     position: "absolute",
     top: -3,
@@ -246,16 +259,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: COLORS.bg,
   },
-  badgeText: {
-    color: "#FFF",
-    fontFamily: "Inter_700Bold",
-    fontSize: 9,
-  },
-  tabLabel: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 9.5,
-    marginTop: 1,
-  },
+  badgeText: { color: "#FFF", fontFamily: "Inter_700Bold", fontSize: 9 },
+  tabLabel: { fontFamily: "Inter_500Medium", fontSize: 9.5, marginTop: 1 },
   saturnCenter: {
     width: 70,
     alignItems: "center",
@@ -263,18 +268,18 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     position: "relative",
   },
-  saturnGlowOuter: {
+  saturnGlowRing: {
     position: "absolute",
     top: -22,
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: "rgba(200,168,75,0.15)",
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(200,168,75,0.18)",
   },
   saturnFAB: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: "#181408",
     alignItems: "center",
     justifyContent: "center",
@@ -283,14 +288,14 @@ const styles = StyleSheet.create({
     borderColor: "#5A4010",
     shadowColor: "#C8A84B",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 14,
-    elevation: 10,
+    elevation: 12,
   },
   saturnFABActive: {
     borderColor: "#FFD580",
     backgroundColor: "#201800",
-    shadowOpacity: 0.6,
+    shadowOpacity: 0.7,
   },
   saturnLabel: {
     fontFamily: "Inter_500Medium",

@@ -15,15 +15,23 @@ A high-fidelity Expo React Native mobile app for personality type enthusiasts (M
 - **UI**: Custom glassmorphism components, @expo/vector-icons
 - **Fonts**: Inter (400, 500, 600, 700)
 
+## Tab Navigation (exactly 5)
+1. **Explore** (index) — Personalities/PDB browse
+2. **Chats** — Chat list + Communities switcher (merged), View Once photo/video, Record Video
+3. **Soul** (center FAB) — Saturn/Neptune floating planet button, Chemistry & connections
+4. **Profile** — Profile + AI Insights (PersonaAI chat) + Themes picker
+5. **Coins** (market) — Coin packs, daily rewards, Premium perks
+
 ## Key Files
 - `artifacts/mobile/app/_layout.tsx` — Root layout (fonts, providers)
-- `artifacts/mobile/app/(tabs)/_layout.tsx` — 5-tab layout (NativeTabs + Classic fallback)
+- `artifacts/mobile/app/(tabs)/_layout.tsx` — 5-tab layout with CustomTabBar
+- `artifacts/mobile/components/CustomTabBar.tsx` — Saturn FAB center, animation FIX: separate saturnScale (native) and glowOpacity (non-native) on different Animated.Values
 - `artifacts/mobile/app/(tabs)/index.tsx` — Personalities screen
-- `artifacts/mobile/app/(tabs)/communities.tsx` — Communities screen
+- `artifacts/mobile/app/(tabs)/chats.tsx` — Merged Chats+Communities with animated switcher, View Once, Record Video
 - `artifacts/mobile/app/(tabs)/soul.tsx` — Soul & Chemistry screen
-- `artifacts/mobile/app/(tabs)/profile.tsx` — Profile screen
-- `artifacts/mobile/app/(tabs)/market.tsx` — Market/Monetization screen
-- `artifacts/mobile/app/onboarding.tsx` — AI type discovery onboarding
+- `artifacts/mobile/app/(tabs)/profile.tsx` — Profile | AI Insights | Themes (3-tab layout)
+- `artifacts/mobile/app/(tabs)/market.tsx` — Coins purchase screen
+- `artifacts/mobile/app/onboarding.tsx` — AI-powered onboarding (PersonaAI chat → type, Quick Quiz, Know My Type grid)
 - `artifacts/mobile/constants/colors.ts` — Theme (ultra-dark #000000, accent #7C4DFF)
 - `artifacts/mobile/context/AppContext.tsx` — Global state
 - `artifacts/mobile/data/mockData.ts` — 100% dummy data (25 celebs, 10 communities, 8 connections)
