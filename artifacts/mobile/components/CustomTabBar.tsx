@@ -9,11 +9,29 @@ import {
 } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { COLORS } from "@/constants/colors";
 import { SaturnIcon } from "@/components/SaturnIcon";
+
+// Coin with heart icon
+function CoinHeartIcon({ focused, color }: { focused: boolean; color: string }) {
+  return (
+    <View style={{ alignItems: "center", justifyContent: "center", width: 24, height: 24 }}>
+      <View style={[
+        coinHeart.outer,
+        { borderColor: focused ? "#F59E0B" : "#5A4A20", backgroundColor: focused ? "#F59E0B22" : "transparent" }
+      ]}>
+        <Ionicons name="heart" size={11} color={focused ? "#F59E0B" : "#8A7040"} />
+      </View>
+    </View>
+  );
+}
+
+const coinHeart = StyleSheet.create({
+  outer: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
+});
 
 function getTabIcon(routeName: string, focused: boolean, color: string) {
   const sz = 22;
@@ -21,7 +39,7 @@ function getTabIcon(routeName: string, focused: boolean, color: string) {
     case "index": return <Feather name="search" size={sz} color={color} />;
     case "chats": return <Ionicons name={focused ? "chatbubble" : "chatbubble-outline"} size={sz} color={color} />;
     case "profile": return <Ionicons name={focused ? "person-circle" : "person-circle-outline"} size={sz} color={color} />;
-    case "market": return <Ionicons name={focused ? "cash" : "cash-outline"} size={sz} color={color} />;
+    case "market": return <CoinHeartIcon focused={focused} color={color} />;
     default: return <Feather name="circle" size={sz} color={color} />;
   }
 }
@@ -48,9 +66,9 @@ const TabItem = memo(({ route, isFocused, onPress, unreadCount }: TabItemProps) 
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handleIn = () =>
-    Animated.spring(scaleAnim, { toValue: 0.86, useNativeDriver: true, speed: 40 }).start();
+    Animated.spring(scaleAnim, { toValue: 0.84, useNativeDriver: true, speed: 50 }).start();
   const handleOut = () =>
-    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 20 }).start();
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 24 }).start();
 
   return (
     <Animated.View style={[styles.tabItem, { transform: [{ scale: scaleAnim }] }]}>
@@ -61,7 +79,7 @@ const TabItem = memo(({ route, isFocused, onPress, unreadCount }: TabItemProps) 
         style={styles.tabBtn}
         activeOpacity={1}
       >
-        <View style={[styles.tabIconWrap, isFocused && styles.tabIconWrapActive]}>
+        <View style={styles.tabIconWrap}>
           {getTabIcon(route.name, isFocused, color)}
           {!!unreadCount && unreadCount > 0 && (
             <View style={styles.badge}>
@@ -69,7 +87,7 @@ const TabItem = memo(({ route, isFocused, onPress, unreadCount }: TabItemProps) 
             </View>
           )}
         </View>
-        <Text style={[styles.tabLabel, { color }]} numberOfLines={1}>
+        <Text style={[styles.tabLabel, { color: isFocused ? COLORS.accent : COLORS.tabInactive }]} numberOfLines={1}>
           {getTabLabel(route.name)}
         </Text>
       </TouchableOpacity>
@@ -84,29 +102,26 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const soulIdx = state.routes.findIndex((r) => r.name === "soul");
   const isSoulActive = state.index === soulIdx;
 
-  // Keep native and non-native animations strictly separated on different Animated.Values
-  const saturnScale = useRef(new Animated.Value(1)).current; // useNativeDriver: true
-  const glowOpacity = useRef(new Animated.Value(0.3)).current; // useNativeDriver: false
+  // CRITICAL: separate Animated.Values for native vs non-native drivers
+  const saturnScale = useRef(new Animated.Value(1)).current;   // useNativeDriver: true
+  const glowOpacity = useRef(new Animated.Value(0.25)).current; // useNativeDriver: false
 
   useEffect(() => {
     const scaleLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(saturnScale, { toValue: 1.08, duration: 2200, useNativeDriver: true }),
-        Animated.timing(saturnScale, { toValue: 1, duration: 2200, useNativeDriver: true }),
+        Animated.timing(saturnScale, { toValue: 1.09, duration: 2400, useNativeDriver: true }),
+        Animated.timing(saturnScale, { toValue: 1, duration: 2400, useNativeDriver: true }),
       ])
     );
     const glowLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(glowOpacity, { toValue: 0.9, duration: 2800, useNativeDriver: false }),
+        Animated.timing(glowOpacity, { toValue: 0.85, duration: 2800, useNativeDriver: false }),
         Animated.timing(glowOpacity, { toValue: 0.2, duration: 2800, useNativeDriver: false }),
       ])
     );
     scaleLoop.start();
     glowLoop.start();
-    return () => {
-      scaleLoop.stop();
-      glowLoop.stop();
-    };
+    return () => { scaleLoop.stop(); glowLoop.stop(); };
   }, []);
 
   const leftRoutes = state.routes.slice(0, 2);
@@ -129,9 +144,9 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {isIOS ? (
-        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
       ) : (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(9,9,11,0.97)" }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(8,8,10,0.98)" }]} />
       )}
       <View style={styles.topBorder} />
 
@@ -152,32 +167,21 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           })}
         </View>
 
-        {/* Center Saturn FAB */}
-        <View style={styles.saturnCenter}>
-          {/* Glow ring — ONLY non-native opacity, NO scale here */}
-          <Animated.View
-            style={[
-              styles.saturnGlowRing,
-              { opacity: glowOpacity },
-            ]}
-          />
-          {/* Planet button — ONLY native scale, NO opacity here */}
+        {/* Center Soul FAB */}
+        <View style={styles.saturnCenter} pointerEvents="box-none">
+          {/* Glow ring – ONLY non-native opacity */}
+          <Animated.View style={[styles.saturnGlowRing, { opacity: glowOpacity }]} />
+          {/* Scale – ONLY native driver */}
           <Animated.View style={{ transform: [{ scale: saturnScale }] }}>
             <TouchableOpacity
               style={[styles.saturnFAB, isSoulActive && styles.saturnFABActive]}
               onPress={handleSoul}
               activeOpacity={0.82}
             >
-              <SaturnIcon
-                size={30}
-                color={isSoulActive ? "#FFD580" : "#C8A84B"}
-                ringColor={isSoulActive ? "#FFD580" : "#C8A84B"}
-              />
+              <SaturnIcon size={28} color={isSoulActive ? "#E8C84A" : "#B09030"} ringColor={isSoulActive ? "#E8C84A" : "#7A6020"} />
             </TouchableOpacity>
           </Animated.View>
-          <Text style={[styles.saturnLabel, isSoulActive && { color: "#FFD580" }]}>
-            Soul
-          </Text>
+          <Text style={[styles.saturnLabel, isSoulActive && { color: "#E8C84A" }]}>Soul</Text>
         </View>
 
         {/* Right 2 tabs */}
@@ -190,7 +194,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                 route={route}
                 isFocused={state.index === routeIdx}
                 onPress={() => handleTabPress(route, state.index === routeIdx)}
-                unreadCount={0}
               />
             );
           })}
@@ -201,106 +204,19 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    overflow: "visible",
-  },
-  topBorder: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 0.5,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  tabRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    paddingTop: 8,
-    paddingBottom: 4,
-    paddingHorizontal: 4,
-    overflow: "visible",
-  },
-  halfRow: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "flex-end",
-  },
+  container: { position: "absolute", bottom: 0, left: 0, right: 0, overflow: "visible" },
+  topBorder: { position: "absolute", top: 0, left: 0, right: 0, height: 0.5, backgroundColor: "rgba(255,255,255,0.08)" },
+  tabRow: { flexDirection: "row", alignItems: "flex-end", paddingTop: 6, paddingBottom: 2, paddingHorizontal: 4, overflow: "visible" },
+  halfRow: { flex: 1, flexDirection: "row", justifyContent: "space-around", alignItems: "flex-end" },
   tabItem: { flex: 1, alignItems: "center" },
-  tabBtn: {
-    alignItems: "center",
-    paddingHorizontal: 2,
-    paddingVertical: 2,
-    gap: 3,
-  },
-  tabIconWrap: {
-    width: 38,
-    height: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    position: "relative",
-  },
-  tabIconWrapActive: { backgroundColor: COLORS.accentDim },
-  badge: {
-    position: "absolute",
-    top: -3,
-    right: 0,
-    backgroundColor: COLORS.accentRed,
-    borderRadius: 8,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    minWidth: 16,
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: COLORS.bg,
-  },
+  tabBtn: { alignItems: "center", paddingHorizontal: 2, paddingVertical: 4, gap: 3 },
+  tabIconWrap: { width: 36, height: 28, alignItems: "center", justifyContent: "center", position: "relative" },
+  badge: { position: "absolute", top: -4, right: -2, backgroundColor: "#EF4444", borderRadius: 8, paddingHorizontal: 4, paddingVertical: 1, minWidth: 16, alignItems: "center", borderWidth: 1.5, borderColor: "#08080A" },
   badgeText: { color: "#FFF", fontFamily: "Inter_700Bold", fontSize: 9 },
-  tabLabel: { fontFamily: "Inter_500Medium", fontSize: 9.5, marginTop: 1 },
-  saturnCenter: {
-    width: 70,
-    alignItems: "center",
-    overflow: "visible",
-    marginBottom: 2,
-    position: "relative",
-  },
-  saturnGlowRing: {
-    position: "absolute",
-    top: -22,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "rgba(200,168,75,0.18)",
-  },
-  saturnFAB: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: "#181408",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: -18,
-    borderWidth: 1.5,
-    borderColor: "#5A4010",
-    shadowColor: "#C8A84B",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 12,
-  },
-  saturnFABActive: {
-    borderColor: "#FFD580",
-    backgroundColor: "#201800",
-    shadowOpacity: 0.7,
-  },
-  saturnLabel: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 9.5,
-    color: COLORS.tabInactive,
-    marginTop: 4,
-  },
+  tabLabel: { fontFamily: "Inter_500Medium", fontSize: 9.5 },
+  saturnCenter: { width: 68, alignItems: "center", overflow: "visible", marginBottom: 0, position: "relative" },
+  saturnGlowRing: { position: "absolute", top: -26, width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(184,140,30,0.2)" },
+  saturnFAB: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#141005", alignItems: "center", justifyContent: "center", marginTop: -20, borderWidth: 1.5, borderColor: "#4A3808", shadowColor: "#C8A82A", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 14 },
+  saturnFABActive: { borderColor: "#E8C84A", backgroundColor: "#1C1400", shadowOpacity: 0.75 },
+  saturnLabel: { fontFamily: "Inter_500Medium", fontSize: 9.5, color: COLORS.tabInactive, marginTop: 3 },
 });
