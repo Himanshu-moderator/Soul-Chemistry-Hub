@@ -3,6 +3,7 @@ import { Animated, Dimensions, Easing, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, Ellipse, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useTheme } from "@/theme/ThemeProvider";
+import { IS_WEB, keyframes, timing } from "@/components/cosmic/motion";
 
 // The space backdrop, built as clear layers (back to front). The interface (text,
 // buttons) is drawn above all of them:
@@ -40,11 +41,46 @@ function outward(x: number, y: number): [number, number] {
   return [(dx / len) * w * 0.9, (dy / len) * height * 0.9];
 }
 
-// Entrance: given the shared progress value `g` (0 -> 1), the child glides in from
-// `from` to its place while fading in. `lag` (0 to 0.4) staggers the arrivals.
-// Without `g` it does nothing.
+// Entrance: while `g` is given, the child glides in from `from` to its place while
+// fading in. `lag` (0 to 0.4) staggers the arrivals. Without `g` it does nothing.
+// Phones drive it with Animated (progress `g`); the web plays the same motion as a
+// CSS animation, which the browser runs off the JavaScript thread.
+const GATHER_MS = 2400;
+
 function Gather({ g, from, lag = 0, children }: { g?: Animated.Value; from: [number, number]; lag?: number; children: React.ReactNode }) {
   if (!g) return <>{children}</>;
+  return IS_WEB ? (
+    <WebGather from={from} lag={lag}>
+      {children}
+    </WebGather>
+  ) : (
+    <NativeGather g={g} from={from} lag={lag}>
+      {children}
+    </NativeGather>
+  );
+}
+
+function WebGather({ from, lag, children }: { from: [number, number]; lag: number; children: React.ReactNode }) {
+  const delay = lag * GATHER_MS;
+  const fade = useMemo(() => keyframes({ "0%": { opacity: 0 }, "100%": { opacity: 1 } }, { iterations: 1, fill: "backwards" }), []);
+  const move = useMemo(
+    () =>
+      keyframes(
+        { "0%": { transform: [{ translateX: from[0] }, { translateY: from[1] }] }, "100%": { transform: [{ translateX: 0 }, { translateY: 0 }] } },
+        { iterations: 1, easing: "cubic-bezier(0.215, 0.61, 0.355, 1)", fill: "backwards" }
+      ),
+    [from]
+  );
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, fade, timing(1300, delay)]}>
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, move, timing(GATHER_MS - delay, delay)]}>
+        {children}
+      </View>
+    </View>
+  );
+}
+
+function NativeGather({ g, from, lag, children }: { g: Animated.Value; from: [number, number]; lag: number; children: React.ReactNode }) {
   return (
     <Animated.View
       pointerEvents="none"
@@ -105,7 +141,79 @@ function makeStars(): StarSpec[] {
 const STAR_BRIGHTNESS: Record<SkyVariant, number> = { full: 0.95, starry: 0.8, subtle: 0.6 };
 const FALLING_COUNT: Record<SkyVariant, number> = { full: 2, starry: 2, subtle: 1 };
 
-// One value that eases 0 -> 1 -> 0 forever. Four of these drive every star.
+// Slow twinkle periods (ms) of the four groups of smaller stars, and their start offsets.
+const BREATH = [
+  { ms: 4200, delay: 0 },
+  { ms: 5600, delay: 900 },
+  { ms: 6800, delay: 1800 },
+  { ms: 8000, delay: 2700 },
+];
+
+// ---- web: CSS animations ---------------------------------------------------
+
+// Smaller stars: dim to a third and back, slowly. The star keeps its own brightness
+// on the outer element; the animated layer inside only scales it down and up.
+const breathe = IS_WEB ? keyframes({ "0%": { opacity: 0.35 }, "100%": { opacity: 1 } }, { direction: "alternate", easing: "ease-in-out" }) : undefined;
+
+// Bigger stars: rest dim for a while, flare with a soft glow, then settle.
+const flareGlow = IS_WEB
+  ? keyframes(
+      {
+        "0%": { opacity: 0.15, transform: [{ scale: 0.8 }] },
+        "55%": { opacity: 0.15, transform: [{ scale: 0.8 }] },
+        "72%": { opacity: 1, transform: [{ scale: 1.35 }] },
+        "100%": { opacity: 0.15, transform: [{ scale: 0.8 }] },
+      },
+      { easing: "ease-in-out" }
+    )
+  : undefined;
+const flareCore = IS_WEB
+  ? keyframes({ "0%": { opacity: 0.5 }, "55%": { opacity: 0.5 }, "72%": { opacity: 1 }, "100%": { opacity: 0.5 } }, { easing: "ease-in-out" })
+  : undefined;
+
+function WebBigStar({ spec, k }: { spec: StarSpec; k: number }) {
+  // Each big star gets its own rhythm, so they never flare together.
+  const rhythm = useMemo(() => timing(7000 + Math.random() * 4500, -Math.random() * 9000), []);
+  const s = spec.size;
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", left: `${spec.x}%`, top: `${spec.y}%`, width: 0, height: 0, opacity: k }}>
+      <View style={[{ position: "absolute", left: -s * 4, top: -s * 4 }, flareGlow, rhythm]}>
+        <Glow color="#D8D2FF" alpha={0.55} size={s * 8} style={{ position: "relative" }} />
+      </View>
+      <View style={[{ position: "absolute", left: -s / 2, top: -s / 2, width: s, height: s, borderRadius: s, backgroundColor: "#FFFFFF" }, flareCore, rhythm]} />
+    </View>
+  );
+}
+
+const WebStars = memo(function WebStars({ variant, g }: { variant: SkyVariant; g?: Animated.Value }) {
+  const specs = useMemo(makeStars, []);
+  const k = STAR_BRIGHTNESS[variant];
+  return (
+    <>
+      {specs.map((s) => {
+        const lag = (s.id % 8) * 0.05;
+        return (
+          <Gather key={s.id} g={g} from={outward(s.x, s.y)} lag={lag}>
+            {s.glow ? (
+              <WebBigStar spec={s} k={k} />
+            ) : (
+              <View
+                pointerEvents="none"
+                style={{ position: "absolute", left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, marginLeft: -s.size / 2, marginTop: -s.size / 2, opacity: s.opacity * k }}
+              >
+                <View style={[{ flex: 1, borderRadius: s.size, backgroundColor: "#FFFFFF" }, breathe, timing(BREATH[s.loop].ms, BREATH[s.loop].delay)]} />
+              </View>
+            )}
+          </Gather>
+        );
+      })}
+    </>
+  );
+});
+
+// ---- phones: Animated with the native driver -------------------------------
+
+// One value that eases 0 -> 1 -> 0 forever. Four of these drive every smaller star.
 function useBreath(duration: number, delay: number) {
   const value = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -171,10 +279,9 @@ function BigStar({ spec, k }: { spec: StarSpec; k: number }) {
   );
 }
 
-const Stars = memo(function Stars({ variant, g }: { variant: SkyVariant; g?: Animated.Value }) {
+const NativeStars = memo(function NativeStars({ variant, g }: { variant: SkyVariant; g?: Animated.Value }) {
   const specs = useMemo(makeStars, []);
-  // The smaller dots breathe gently on shared loops; the bigger ones twinkle on their own.
-  const loops = [useBreath(4200, 0), useBreath(5600, 900), useBreath(6800, 1800), useBreath(8000, 2700)];
+  const loops = [useBreath(BREATH[0].ms, BREATH[0].delay), useBreath(BREATH[1].ms, BREATH[1].delay), useBreath(BREATH[2].ms, BREATH[2].delay), useBreath(BREATH[3].ms, BREATH[3].delay)];
   const k = STAR_BRIGHTNESS[variant];
 
   return (
@@ -202,13 +309,15 @@ const Stars = memo(function Stars({ variant, g }: { variant: SkyVariant; g?: Ani
   );
 });
 
+const Stars = IS_WEB ? WebStars : NativeStars;
+
 // A shooting star: a short bright streak that enters at the top right and slides
 // down-left along a gentle diagonal (29 degrees below horizontal), head first, its
 // tail fading out behind it (up and to the right). Then it waits and repeats.
 const FALL_DEG = 29;
 const FALL_SLOPE = Math.tan((FALL_DEG * Math.PI) / 180);
 
-function FallingStar({ top, delay, duration, brightness }: { top: string; delay: number; duration: number; brightness: number }) {
+function NativeFallingStar({ top, delay, duration, brightness }: { top: string; delay: number; duration: number; brightness: number }) {
   const width = Math.min(Dimensions.get("window").width, 440);
   const p = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -240,9 +349,51 @@ function FallingStar({ top, delay, duration, brightness }: { top: string; delay:
   );
 }
 
+// Web version of the same motion, as a CSS animation. One cycle is: wait, cross the
+// sky, wait again (the same timing as above), with the head fading in and out.
+function WebFallingStar({ top, delay, duration, brightness }: { top: string; delay: number; duration: number; brightness: number }) {
+  const width = Math.min(Dimensions.get("window").width, 440);
+  const fx = useMemo(() => {
+    const dx = width * 1.1;
+    const dy = dx * FALL_SLOPE;
+    const total = delay + duration * 2;
+    const start = (delay / total) * 100;
+    const end = ((delay + duration) / total) * 100;
+    const at = (f: number) => `${(start + (end - start) * f).toFixed(2)}%`;
+    const pose = (f: number, opacity: number) => ({
+      opacity,
+      transform: [{ translateX: -dx * f }, { translateY: dy * f }, { rotate: `${180 - FALL_DEG}deg` }],
+    });
+    return keyframes({
+      "0%": pose(0, 0),
+      [`${start.toFixed(2)}%`]: pose(0, 0),
+      [at(0.12)]: pose(0.12, 1),
+      [at(0.7)]: pose(0.7, 0.8),
+      [`${end.toFixed(2)}%`]: pose(1, 0),
+      "100%": pose(1, 0),
+    });
+  }, [width, delay, duration]);
+
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", left: "100%", top: top as `${number}%`, opacity: brightness }}>
+      <View style={[fx, timing(delay + duration * 2)]}>
+        <LinearGradient colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.4)", "#FFFFFF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: 96, height: 2, borderRadius: 2 }} />
+      </View>
+    </View>
+  );
+}
+
+const FallingStar = IS_WEB ? WebFallingStar : NativeFallingStar;
+
 // -------------------------------------------------------------- planets
 
 const RING_TILT = "-16deg";
+
+// The sliding surface strip: a CSS animation on the web, Animated on phones.
+function StripView({ style, spinFx, native, children }: { style: object; spinFx: unknown[] | null; native: object; children: React.ReactNode }) {
+  if (IS_WEB) return <View style={[style, ...(spinFx as object[] | null ?? [])]}>{children}</View>;
+  return <Animated.View style={[style, native]}>{children}</Animated.View>;
+}
 
 // A planet is a flat disc made to look like a sphere: its surface (bands and
 // storms) lives on a strip that slides sideways behind a fixed soft shading, so
@@ -268,11 +419,17 @@ function Planet({
 }) {
   const turn = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (!spinSeconds) return;
+    if (!spinSeconds || IS_WEB) return;
     const loop = Animated.loop(Animated.timing(turn, { toValue: 1, duration: spinSeconds * 1000, easing: Easing.linear, useNativeDriver: true }));
     loop.start();
     return () => loop.stop();
   }, [turn, spinSeconds]);
+
+  // On the web the spin is a CSS animation of the surface strip (see motion.ts).
+  const spinFx = useMemo(
+    () => (IS_WEB && spinSeconds ? [keyframes({ "0%": { transform: [{ translateX: 0 }] }, "100%": { transform: [{ translateX: -size }] } }), timing(spinSeconds * 1000)] : null),
+    [size, spinSeconds]
+  );
 
   const surface = useMemo(() => {
     const rand = seeded(seed);
@@ -305,15 +462,10 @@ function Planet({
       {ring && ringHalf(false)}
       <View style={{ position: "absolute", left: -size / 2, top: -size / 2, width: size, height: size, borderRadius: size / 2, overflow: "hidden" }}>
         <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
-        <Animated.View
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            width: size * 2,
-            height: size,
-            transform: [{ translateX: turn.interpolate({ inputRange: [0, 1], outputRange: [0, -size] }) }],
-          }}
+        <StripView
+          style={{ position: "absolute", left: 0, top: 0, width: size * 2, height: size }}
+          spinFx={spinFx}
+          native={{ transform: [{ translateX: turn.interpolate({ inputRange: [0, 1], outputRange: [0, -size] }) }] }}
         >
           <Svg width={size * 2} height={size}>
             {[0, size].map((o) => (
@@ -327,7 +479,7 @@ function Planet({
               </React.Fragment>
             ))}
           </Svg>
-        </Animated.View>
+        </StripView>
         {/* fixed shading: lit from the top left, darker towards the far edge */}
         <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
           <Defs>
@@ -383,7 +535,7 @@ export function CosmicBackground({ variant = "subtle", sky, glow, noStars, gathe
 
   const g = useMemo(() => (gather ? new Animated.Value(0) : undefined), [gather]);
   useEffect(() => {
-    if (!g) return;
+    if (!g || IS_WEB) return;
     Animated.timing(g, { toValue: 1, duration: 2400, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [g]);
 
