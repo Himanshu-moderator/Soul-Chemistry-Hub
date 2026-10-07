@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 import { CosmicBackground, type SkyVariant } from "@/components/cosmic/CosmicBackground";
 
 // One sky for the whole app, drawn once behind every screen. Screens don't draw
@@ -39,11 +40,16 @@ export function useSky(variant: SkyVariant) {
 }
 
 // A transparent page wrapper that requests a sky: <Sky variant="subtle">…</Sky>
+// Tab screens stay mounted after you leave them, and since they have no
+// background of their own they would show through the next screen, so an
+// unfocused page hides itself.
 export function Sky({ variant = "subtle", children }: { variant?: SkyVariant; children: React.ReactNode }) {
   useSky(variant);
-  return <View style={styles.fill}>{children}</View>;
+  const focused = useIsFocused();
+  return <View style={[styles.fill, !focused && styles.hidden]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  hidden: { display: "none" },
 });

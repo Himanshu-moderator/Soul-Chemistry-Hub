@@ -4,12 +4,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 import { useTheme } from "@/theme/ThemeProvider";
 
-// The space backdrop: a tinted night-sky gradient, stars, soft nebula glows and
-// (on the welcome screen only) floating planets and a shooting star.
-//   full    welcome screen and splash: lively, with planets
+// The space backdrop. It is meant to sit quietly BEHIND the interface: a tinted
+// night-sky gradient, a few slowly twinkling stars, one or two stars drifting down,
+// soft nebula glows and, on the welcome screen only, planets slowly orbiting.
+//   full    welcome screen and splash: planets and a few more stars
 //   starry  behind forms: a gentle starfield, no planets
-//   subtle  behind the app screens: a few faint stars, so text always reads cleanly
-// Everything here is decoration: it never receives touches and sits behind content.
+//   subtle  behind the app screens: very faint stars, so text always reads cleanly
+// Everything is slow on purpose, and decoration only: it never receives touches.
 
 export type SkyVariant = "full" | "starry" | "subtle";
 
@@ -30,12 +31,12 @@ interface StarSpec {
   opacity: number;
   phase: 0 | 1 | 2; // which shared twinkle loop drives it
   twinkle: boolean;
-  drift: boolean;
 }
 
-const STAR_COUNT: Record<SkyVariant, number> = { full: 40, starry: 26, subtle: 16 };
-// Faint stars on app screens so they never compete with text.
-const STAR_BRIGHTNESS: Record<SkyVariant, number> = { full: 1, starry: 0.7, subtle: 0.45 };
+const STAR_COUNT: Record<SkyVariant, number> = { full: 22, starry: 14, subtle: 9 };
+const FALLING_COUNT: Record<SkyVariant, number> = { full: 3, starry: 2, subtle: 1 };
+// How bright stars are, relative to full. Faint on app screens.
+const STAR_BRIGHTNESS: Record<SkyVariant, number> = { full: 0.75, starry: 0.5, subtle: 0.32 };
 
 function makeStars(count: number, seed: number): StarSpec[] {
   const rand = seeded(seed);
@@ -43,17 +44,16 @@ function makeStars(count: number, seed: number): StarSpec[] {
     id,
     x: rand() * 100,
     y: rand() * 100,
-    size: 1 + rand() * 1.6,
-    opacity: 0.35 + rand() * 0.55,
+    size: 1 + rand() * 1.3,
+    opacity: 0.4 + rand() * 0.5,
     phase: (id % 3) as 0 | 1 | 2,
-    twinkle: id % 2 === 0,
-    drift: id % 5 === 0,
+    twinkle: id % 2 === 0, // the rest just shine steadily
   }));
 }
 
-// One value that eases 0 -> 1 -> 0 forever. A handful of these drive every star,
-// instead of one animation per star.
-function useLoop(duration: number, delay = 0, enabled = true) {
+// One value that eases 0 -> 1 -> 0 forever. Three of these drive every twinkling
+// star, instead of one animation per star.
+function useBreath(duration: number, delay = 0, enabled = true) {
   const value = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!enabled) return;
@@ -72,16 +72,15 @@ function useLoop(duration: number, delay = 0, enabled = true) {
 const Stars = memo(function Stars({ variant }: { variant: SkyVariant }) {
   const specs = useMemo(() => makeStars(STAR_COUNT[variant], 7), [variant]);
   const moving = variant !== "subtle";
-  const loops = [useLoop(2600, 0, moving), useLoop(3600, 700, moving), useLoop(4600, 1500, moving)];
-  const drift = useLoop(9000, 0, moving);
+  // Slow: each star takes 4 to 7 seconds to brighten and fade.
+  const loops = [useBreath(4200, 0, moving), useBreath(5600, 900, moving), useBreath(7000, 1800, moving)];
   const k = STAR_BRIGHTNESS[variant];
 
   return (
     <>
       {specs.map((s) => {
         const base = s.opacity * k;
-        const opacity = moving && s.twinkle ? loops[s.phase].interpolate({ inputRange: [0, 1], outputRange: [base * 0.25, base] }) : base;
-        const translateX = moving && s.drift ? drift.interpolate({ inputRange: [0, 1], outputRange: [-8, 8] }) : 0;
+        const opacity = moving && s.twinkle ? loops[s.phase].interpolate({ inputRange: [0, 1], outputRange: [base * 0.2, base] }) : base;
         return (
           <Animated.View
             key={s.id}
@@ -95,7 +94,6 @@ const Stars = memo(function Stars({ variant }: { variant: SkyVariant }) {
               borderRadius: s.size,
               backgroundColor: "#FFFFFF",
               opacity,
-              transform: [{ translateX }],
             }}
           />
         );
@@ -104,21 +102,39 @@ const Stars = memo(function Stars({ variant }: { variant: SkyVariant }) {
   );
 });
 
-interface PlanetProps {
-  size: number;
-  colors: [string, string];
-  style: object;
-  ring?: boolean;
-  floatPx?: number;
-  floatMs?: number;
+// A star that slowly slides down the sky and fades, then waits and starts again.
+function FallingStar({ left, delay, duration, brightness }: { left: string; delay: number; duration: number; brightness: number }) {
+  const { height } = Dimensions.get("window");
+  const p = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(p, { toValue: 1, duration, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(p, { toValue: 0, duration: 0, useNativeDriver: true }),
+        Animated.delay(duration * 0.8),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [p, delay, duration]);
+  const translateY = p.interpolate({ inputRange: [0, 1], outputRange: [0, height * 0.55] });
+  const translateX = p.interpolate({ inputRange: [0, 1], outputRange: [0, -height * 0.16] });
+  const opacity = p.interpolate({ inputRange: [0, 0.15, 0.7, 1], outputRange: [0, brightness, brightness * 0.6, 0] });
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{ position: "absolute", left: left as `${number}%`, top: "4%", opacity, transform: [{ translateX }, { translateY }, { rotate: "-71deg" }] }}
+    >
+      <LinearGradient colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.9)"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: 46, height: 1.5, borderRadius: 2 }} />
+    </Animated.View>
+  );
 }
 
-// A shaded, softly floating planet (optionally ringed).
-function Planet({ size, colors, style, ring, floatPx = 10, floatMs = 6500 }: PlanetProps) {
-  const t = useLoop(floatMs);
-  const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [-floatPx, floatPx] });
+// A shaded planet (optionally ringed). Light always comes from the top left.
+function Planet({ size, colors, ring }: { size: number; colors: [string, string]; ring?: boolean }) {
   return (
-    <Animated.View pointerEvents="none" style={[{ position: "absolute", width: size, height: size, transform: [{ translateY }] }, style]}>
+    <View style={{ width: size, height: size }}>
       <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden" }}>
         <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
         <LinearGradient
@@ -143,32 +159,42 @@ function Planet({ size, colors, style, ring, floatPx = 10, floatMs = 6500 }: Pla
           }}
         />
       )}
-    </Animated.View>
+    </View>
   );
 }
 
-// A streak of light across the corner of the sky every few seconds.
-function ShootingStar() {
-  const { width, height } = Dimensions.get("window");
-  const p = useRef(new Animated.Value(0)).current;
+interface OrbitProps {
+  // Where the orbit is centred (pixels or percent of the sky).
+  x: number | `${number}%`;
+  y: number | `${number}%`;
+  radius: number;
+  // Seconds for one full revolution.
+  seconds: number;
+  size: number;
+  opacity?: number;
+  // Planets can carry their own satellites.
+  children?: React.ReactNode;
+  planet: React.ReactNode;
+}
+
+// Moves a planet slowly round a point. The planet is turned back against the
+// rotation so its shading doesn't spin with it.
+function Orbit({ x, y, radius, seconds, size, opacity = 0.8, planet, children }: OrbitProps) {
+  const t = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.delay(4200),
-        Animated.timing(p, { toValue: 1, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(p, { toValue: 0, duration: 0, useNativeDriver: true }),
-        Animated.delay(5200),
-      ])
-    );
+    const loop = Animated.loop(Animated.timing(t, { toValue: 1, duration: seconds * 1000, easing: Easing.linear, useNativeDriver: true }));
     loop.start();
     return () => loop.stop();
-  }, [p]);
-  const translateX = p.interpolate({ inputRange: [0, 1], outputRange: [width * 0.15, -width * 0.35] });
-  const translateY = p.interpolate({ inputRange: [0, 1], outputRange: [height * 0.08, height * 0.3] });
-  const opacity = p.interpolate({ inputRange: [0, 0.1, 0.8, 1], outputRange: [0, 1, 0.8, 0] });
+  }, [t, seconds]);
+  const around = t.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
+  const back = t.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "-360deg"] });
+
   return (
-    <Animated.View pointerEvents="none" style={{ position: "absolute", right: 0, top: 0, opacity, transform: [{ translateX }, { translateY }, { rotate: "-32deg" }] }}>
-      <LinearGradient colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.95)"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: 110, height: 2, borderRadius: 2 }} />
+    <Animated.View pointerEvents="none" style={{ position: "absolute", left: x, top: y, width: 0, height: 0, opacity, transform: [{ rotate: around }] }}>
+      <Animated.View style={{ position: "absolute", left: radius - size / 2, top: -size / 2, transform: [{ rotate: back }] }}>
+        {planet}
+        {children}
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -204,22 +230,40 @@ interface Props {
 export function CosmicBackground({ variant = "subtle", sky, glow, noStars, children }: Props) {
   const { colors } = useTheme();
   const lively = variant !== "subtle";
+  const falling = FALLING_COUNT[variant];
+  const k = STAR_BRIGHTNESS[variant];
 
   return (
     <View style={styles.root}>
       <LinearGradient colors={sky ?? [colors.bgTop, colors.bgBottom]} style={StyleSheet.absoluteFill} />
 
-      <Glow color={glow ?? colors.accent} alpha={lively ? 0.42 : 0.2} size={460} style={{ top: -210, right: -200 }} />
-      <Glow color={glow ?? colors.accentAlt} alpha={lively ? 0.32 : 0.14} size={520} style={{ bottom: -240, left: -220 }} />
+      <Glow color={glow ?? colors.accent} alpha={lively ? 0.3 : 0.14} size={460} style={{ top: -210, right: -200 }} />
+      <Glow color={glow ?? colors.accentAlt} alpha={lively ? 0.22 : 0.09} size={520} style={{ bottom: -240, left: -220 }} />
 
-      {!noStars && <Stars variant={variant} />}
+      {!noStars && (
+        <>
+          <Stars variant={variant} />
+          {falling >= 1 && <FallingStar left="72%" delay={3000} duration={9000} brightness={k} />}
+          {falling >= 2 && <FallingStar left="38%" delay={9500} duration={11000} brightness={k} />}
+          {falling >= 3 && <FallingStar left="90%" delay={15000} duration={10000} brightness={k} />}
+        </>
+      )}
 
       {variant === "full" && (
         <>
-          <Planet size={190} colors={["#38BDF8", "#4F46E5"]} floatPx={9} floatMs={7600} style={{ left: -105, top: "40%" }} />
-          <Planet size={74} colors={["#FDBA74", "#F472B6"]} ring floatPx={7} floatMs={5400} style={{ right: 22, top: "13%" }} />
-          <Planet size={30} colors={["#E2E8F0", "#94A3B8"]} floatPx={5} floatMs={4600} style={{ right: "30%", top: "27%" }} />
-          <ShootingStar />
+          {/* the big blue planet circles slowly just off the left edge */}
+          <Orbit x="-6%" y="50%" radius={26} seconds={160} size={190} opacity={0.7} planet={<Planet size={190} colors={["#38BDF8", "#4F46E5"]} />} />
+          {/* the ringed planet, with a small moon going round it */}
+          <Orbit
+            x="80%"
+            y="15%"
+            radius={14}
+            seconds={110}
+            size={74}
+            opacity={0.8}
+            planet={<Planet size={74} colors={["#FDBA74", "#F472B6"]} ring />}
+          />
+          <Orbit x="80%" y="15%" radius={64} seconds={46} size={26} opacity={0.75} planet={<Planet size={26} colors={["#E2E8F0", "#94A3B8"]} />} />
         </>
       )}
 
