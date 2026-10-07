@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CosmicBackground } from "@/components/cosmic/CosmicBackground";
+import { Sky } from "@/components/cosmic/Sky";
 import { Button, Card, SectionTitle, Sheet } from "@/components/ui";
 import { useApp } from "@/state/AppContext";
 import { useStyles, useTheme } from "@/theme/ThemeProvider";
@@ -51,7 +51,7 @@ export default function CoinsScreen() {
   };
 
   return (
-    <CosmicBackground>
+    <Sky variant="subtle">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 14, paddingHorizontal: 20, paddingBottom: insets.bottom + 120, gap: 26 }}>
         <View>
           <Text style={styles.title}>Coins</Text>
@@ -160,7 +160,7 @@ export default function CoinsScreen() {
         <Button label="Start free trial" onPress={beginTrial} loading={busy} />
         <Text style={styles.hint}>Prototype: nothing is ever charged.</Text>
       </Sheet>
-    </CosmicBackground>
+    </Sky>
   );
 }
 

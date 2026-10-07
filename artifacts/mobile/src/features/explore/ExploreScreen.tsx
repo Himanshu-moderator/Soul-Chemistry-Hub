@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CosmicBackground } from "@/components/cosmic/CosmicBackground";
+import { Sky } from "@/components/cosmic/Sky";
 import { Avatar, Card, Chip, CoinPill, IconButton } from "@/components/ui";
 import { FAMOUS_PEOPLE, PERSONALITY_TYPES } from "@/data/mockData";
 import { useApp } from "@/state/AppContext";
@@ -120,13 +120,16 @@ export default function ExploreScreen() {
   );
 
   return (
-    <CosmicBackground>
+    <Sky variant="subtle">
       <FlatList
         data={people}
         keyExtractor={(p) => p.id}
         ListHeaderComponent={header}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 10, paddingBottom: insets.bottom + 120 }}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -140,7 +143,7 @@ export default function ExploreScreen() {
 
       <CheckinSheet visible={checkin} onClose={() => setCheckin(false)} onCorrect={(c) => void claimCheckin(c)} />
       <TypeWikiSheet visible={wiki} onClose={() => setWiki(false)} mbti={profile.mbti} />
-    </CosmicBackground>
+    </Sky>
   );
 }
 

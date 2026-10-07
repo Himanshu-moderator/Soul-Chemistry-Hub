@@ -143,7 +143,7 @@ The `dist/` folder is the site. Add a `.nojekyll` file (Pages ignores `_expo` ot
 artifacts/mobile/src/
   app/          routes only (one tiny file per URL)
   features/     one folder per screen: welcome, auth, onboarding, explore, chats, community, soul, profile, coins
-  components/   shared pieces: ui, chat, cosmic (sky + splash), brand (logo), navigation
+  components/   shared pieces: ui, chat, cosmic (the shared sky + splash), brand (logo), navigation
   theme/        design tokens, app themes, chat themes
   state/        sign-in state and app data
   services/     the backend client

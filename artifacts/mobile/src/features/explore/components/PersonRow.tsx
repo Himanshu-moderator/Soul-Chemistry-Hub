@@ -17,7 +17,7 @@ interface Props {
 }
 
 // One famous personality: avatar, name, what they do, their type and a follow button.
-export function PersonRow({ person, following, onToggleFollow }: Props) {
+function PersonRowImpl({ person, following, onToggleFollow }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
 
@@ -71,3 +71,6 @@ const makeStyles = (c: Colors) =>
     follow: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: c.surfaceStrong, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
     followText: { color: c.text, fontFamily: font.semibold, fontSize: 12 },
   });
+
+// Re-render a row only when its own data changes (the list is long).
+export const PersonRow = React.memo(PersonRowImpl);

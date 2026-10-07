@@ -4,12 +4,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 import { useTheme } from "@/theme/ThemeProvider";
 
-// The space backdrop: a tinted night-sky gradient, twinkling and drifting stars,
-// floating planets and the odd shooting star. `full` is for the welcome and splash
-// screens; `starry` is the same sky without planets (behind forms); `subtle` is a
-// calmer starfield for the app screens.
+// The space backdrop: a tinted night-sky gradient, stars, soft nebula glows and
+// (on the welcome screen only) floating planets and a shooting star.
+//   full    welcome screen and splash: lively, with planets
+//   starry  behind forms: a gentle starfield, no planets
+//   subtle  behind the app screens: a few faint stars, so text always reads cleanly
+// Everything here is decoration: it never receives touches and sits behind content.
 
-type Variant = "full" | "starry" | "subtle";
+export type SkyVariant = "full" | "starry" | "subtle";
 
 // Small seeded generator so the sky looks the same on every render.
 function seeded(seed: number) {
@@ -26,10 +28,14 @@ interface StarSpec {
   y: number; // percent
   size: number;
   opacity: number;
-  twinkle: number; // ms
-  delay: number;
-  drift: number; // px, 0 = none
+  phase: 0 | 1 | 2; // which shared twinkle loop drives it
+  twinkle: boolean;
+  drift: boolean;
 }
+
+const STAR_COUNT: Record<SkyVariant, number> = { full: 40, starry: 26, subtle: 16 };
+// Faint stars on app screens so they never compete with text.
+const STAR_BRIGHTNESS: Record<SkyVariant, number> = { full: 1, starry: 0.7, subtle: 0.45 };
 
 function makeStars(count: number, seed: number): StarSpec[] {
   const rand = seeded(seed);
@@ -37,49 +43,64 @@ function makeStars(count: number, seed: number): StarSpec[] {
     id,
     x: rand() * 100,
     y: rand() * 100,
-    size: 1 + rand() * 1.8,
-    opacity: 0.35 + rand() * 0.6,
-    twinkle: 1400 + rand() * 2600,
-    delay: rand() * 2500,
-    drift: rand() < 0.3 ? 6 + rand() * 12 : 0,
+    size: 1 + rand() * 1.6,
+    opacity: 0.35 + rand() * 0.55,
+    phase: (id % 3) as 0 | 1 | 2,
+    twinkle: id % 2 === 0,
+    drift: id % 5 === 0,
   }));
 }
 
-// One value that eases back and forth forever.
-function useLoop(duration: number, delay = 0, native = true) {
+// One value that eases 0 -> 1 -> 0 forever. A handful of these drive every star,
+// instead of one animation per star.
+function useLoop(duration: number, delay = 0, enabled = true) {
   const value = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (!enabled) return;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(value, { toValue: 1, duration, delay, easing: Easing.inOut(Easing.sin), useNativeDriver: native }),
-        Animated.timing(value, { toValue: 0, duration, easing: Easing.inOut(Easing.sin), useNativeDriver: native }),
+        Animated.timing(value, { toValue: 1, duration, delay, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(value, { toValue: 0, duration, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
       ])
     );
     loop.start();
     return () => loop.stop();
-  }, [value, duration, delay, native]);
+  }, [value, duration, delay, enabled]);
   return value;
 }
 
-const Star = memo(function Star({ s, animated }: { s: StarSpec; animated: boolean }) {
-  const t = useLoop(s.twinkle, s.delay);
-  const opacity = animated ? t.interpolate({ inputRange: [0, 1], outputRange: [s.opacity * 0.25, s.opacity] }) : s.opacity;
-  const translateX = animated && s.drift ? t.interpolate({ inputRange: [0, 1], outputRange: [-s.drift, s.drift] }) : 0;
+const Stars = memo(function Stars({ variant }: { variant: SkyVariant }) {
+  const specs = useMemo(() => makeStars(STAR_COUNT[variant], 7), [variant]);
+  const moving = variant !== "subtle";
+  const loops = [useLoop(2600, 0, moving), useLoop(3600, 700, moving), useLoop(4600, 1500, moving)];
+  const drift = useLoop(9000, 0, moving);
+  const k = STAR_BRIGHTNESS[variant];
+
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={{
-        position: "absolute",
-        left: `${s.x}%`,
-        top: `${s.y}%`,
-        width: s.size,
-        height: s.size,
-        borderRadius: s.size,
-        backgroundColor: "#FFFFFF",
-        opacity,
-        transform: [{ translateX }],
-      }}
-    />
+    <>
+      {specs.map((s) => {
+        const base = s.opacity * k;
+        const opacity = moving && s.twinkle ? loops[s.phase].interpolate({ inputRange: [0, 1], outputRange: [base * 0.25, base] }) : base;
+        const translateX = moving && s.drift ? drift.interpolate({ inputRange: [0, 1], outputRange: [-8, 8] }) : 0;
+        return (
+          <Animated.View
+            key={s.id}
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              left: `${s.x}%`,
+              top: `${s.y}%`,
+              width: s.size,
+              height: s.size,
+              borderRadius: s.size,
+              backgroundColor: "#FFFFFF",
+              opacity,
+              transform: [{ translateX }],
+            }}
+          />
+        );
+      })}
+    </>
   );
 });
 
@@ -100,7 +121,6 @@ function Planet({ size, colors, style, ring, floatPx = 10, floatMs = 6500 }: Pla
     <Animated.View pointerEvents="none" style={[{ position: "absolute", width: size, height: size, transform: [{ translateY }] }, style]}>
       <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden" }}>
         <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
-        {/* terminator: dark side of the planet */}
         <LinearGradient
           colors={["rgba(255,255,255,0.28)", "rgba(255,255,255,0)", "rgba(0,0,12,0.6)"]}
           start={{ x: 0.2, y: 0.1 }}
@@ -147,58 +167,14 @@ function ShootingStar() {
   const translateY = p.interpolate({ inputRange: [0, 1], outputRange: [height * 0.08, height * 0.3] });
   const opacity = p.interpolate({ inputRange: [0, 0.1, 0.8, 1], outputRange: [0, 1, 0.8, 0] });
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={{ position: "absolute", right: 0, top: 0, opacity, transform: [{ translateX }, { translateY }, { rotate: "-32deg" }] }}
-    >
+    <Animated.View pointerEvents="none" style={{ position: "absolute", right: 0, top: 0, opacity, transform: [{ translateX }, { translateY }, { rotate: "-32deg" }] }}>
       <LinearGradient colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.95)"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: 110, height: 2, borderRadius: 2 }} />
     </Animated.View>
   );
 }
 
-interface Props {
-  variant?: Variant;
-  // Override the sky colours (used by chat themes). Defaults to the app theme.
-  sky?: [string, string];
-  // Glow colour for the override above.
-  glow?: string;
-  // Turn the stars off entirely.
-  noStars?: boolean;
-  children?: React.ReactNode;
-}
-
-export function CosmicBackground({ variant = "subtle", sky, glow, noStars, children }: Props) {
-  const { colors } = useTheme();
-  const full = variant === "full";
-  const lively = variant !== "subtle";
-  const stars = useMemo(() => makeStars(lively ? 70 : 26, lively ? 7 : 11), [lively]);
-
-  return (
-    <View style={styles.root}>
-      <LinearGradient colors={sky ?? [colors.bgTop, colors.bgBottom]} style={StyleSheet.absoluteFill} />
-
-      {/* soft nebula glows in the theme's colours */}
-      <Glow color={glow ?? colors.accent} alpha={lively ? 0.5 : 0.28} size={460} style={{ top: -200, right: -190 }} />
-      <Glow color={glow ?? colors.accentAlt} alpha={lively ? 0.4 : 0.2} size={520} style={{ bottom: -230, left: -210 }} />
-
-      {!noStars && stars.map((s) => <Star key={s.id} s={s} animated={lively || s.id % 3 === 0} />)}
-
-      {full && (
-        <>
-          <Planet size={190} colors={["#38BDF8", "#4F46E5"]} floatPx={9} floatMs={7600} style={{ left: -105, top: "40%" }} />
-          <Planet size={74} colors={["#FDBA74", "#F472B6"]} ring floatPx={7} floatMs={5400} style={{ right: 22, top: "13%" }} />
-          <Planet size={30} colors={["#E2E8F0", "#94A3B8"]} floatPx={5} floatMs={4600} style={{ right: "30%", top: "27%" }} />
-          <ShootingStar />
-        </>
-      )}
-
-      {children}
-    </View>
-  );
-}
-
 // A circle of colour that fades smoothly to nothing at its edge.
-function Glow({ color, alpha, size, style }: { color: string; alpha: number; size: number; style: object }) {
+const Glow = memo(function Glow({ color, alpha, size, style }: { color: string; alpha: number; size: number; style: object }) {
   return (
     <View pointerEvents="none" style={[{ position: "absolute", width: size, height: size }, style]}>
       <Svg width={size} height={size}>
@@ -210,6 +186,44 @@ function Glow({ color, alpha, size, style }: { color: string; alpha: number; siz
         </Defs>
         <Circle cx={size / 2} cy={size / 2} r={size / 2} fill="url(#g)" />
       </Svg>
+    </View>
+  );
+});
+
+interface Props {
+  variant?: SkyVariant;
+  // Override the sky colours (used by chat themes). Defaults to the app theme.
+  sky?: [string, string];
+  // Glow colour for the override above.
+  glow?: string;
+  // Turn the stars off entirely.
+  noStars?: boolean;
+  children?: React.ReactNode;
+}
+
+export function CosmicBackground({ variant = "subtle", sky, glow, noStars, children }: Props) {
+  const { colors } = useTheme();
+  const lively = variant !== "subtle";
+
+  return (
+    <View style={styles.root}>
+      <LinearGradient colors={sky ?? [colors.bgTop, colors.bgBottom]} style={StyleSheet.absoluteFill} />
+
+      <Glow color={glow ?? colors.accent} alpha={lively ? 0.42 : 0.2} size={460} style={{ top: -210, right: -200 }} />
+      <Glow color={glow ?? colors.accentAlt} alpha={lively ? 0.32 : 0.14} size={520} style={{ bottom: -240, left: -220 }} />
+
+      {!noStars && <Stars variant={variant} />}
+
+      {variant === "full" && (
+        <>
+          <Planet size={190} colors={["#38BDF8", "#4F46E5"]} floatPx={9} floatMs={7600} style={{ left: -105, top: "40%" }} />
+          <Planet size={74} colors={["#FDBA74", "#F472B6"]} ring floatPx={7} floatMs={5400} style={{ right: 22, top: "13%" }} />
+          <Planet size={30} colors={["#E2E8F0", "#94A3B8"]} floatPx={5} floatMs={4600} style={{ right: "30%", top: "27%" }} />
+          <ShootingStar />
+        </>
+      )}
+
+      {children}
     </View>
   );
 }

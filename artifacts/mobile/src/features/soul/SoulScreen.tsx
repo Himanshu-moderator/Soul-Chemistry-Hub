@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CosmicBackground } from "@/components/cosmic/CosmicBackground";
+import { Sky } from "@/components/cosmic/Sky";
 import { Avatar, Card, ChemistryRing, SectionTitle, TypeBadge } from "@/components/ui";
 import { CONNECTIONS } from "@/data/mockData";
 import { bestPairs } from "@/lib/personality";
@@ -30,7 +30,7 @@ export default function SoulScreen() {
   const top = sorted[0];
 
   return (
-    <CosmicBackground>
+    <Sky variant="subtle">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 14, paddingHorizontal: 20, paddingBottom: insets.bottom + 120, gap: 26 }}>
         <View>
           <Text style={styles.title}>Soul</Text>
@@ -116,7 +116,7 @@ export default function SoulScreen() {
           </View>
         </Card>
       </ScrollView>
-    </CosmicBackground>
+    </Sky>
   );
 }
 

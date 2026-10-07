@@ -57,6 +57,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
+    "@react-navigation/native": "7.1.34",
     "@supabase/supabase-js": "^2.117.3",
     "react-native-url-polyfill": "^4.0.0"
   }

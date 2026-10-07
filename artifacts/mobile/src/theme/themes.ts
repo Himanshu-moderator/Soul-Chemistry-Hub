@@ -35,6 +35,13 @@ export const withAlpha = (hex: string, alpha: number): string => {
   return `rgba(${r},${g},${b},${alpha})`;
 };
 
+// Blend two "#RRGGBB" colours: t=0 gives a, t=1 gives b.
+const mix = (a: string, b: string, t: number): string => {
+  const ch = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const out = [0, 1, 2].map((i) => Math.round(ch(a, i) * (1 - t) + ch(b, i) * t));
+  return "#" + out.map((v) => v.toString(16).padStart(2, "0")).join("");
+};
+
 const MBTI = {
   INTJ: "#8B5CF6", INTP: "#6366F1", ENTJ: "#A855F7", ENTP: "#C084FC",
   INFJ: "#14B8A6", INFP: "#38BDF8", ENFJ: "#22D3EE", ENFP: "#60A5FA",
@@ -48,9 +55,11 @@ export function buildColors(theme: AppTheme) {
     bg: theme.bg[0],
     bgTop: theme.bg[0],
     bgBottom: theme.bg[1],
-    surface: "rgba(255,255,255,0.055)",
-    surfaceStrong: "rgba(255,255,255,0.095)",
-    surfaceSolid: "#14122B", // opaque, for sheets and the tab bar
+    // Opaque on purpose: cards must fully cover the stars behind them, otherwise
+    // the background and the card text fight each other.
+    surface: mix(theme.bg[1], "#FFFFFF", 0.075),
+    surfaceStrong: mix(theme.bg[1], "#FFFFFF", 0.135),
+    surfaceSolid: mix(theme.bg[1], "#FFFFFF", 0.09), // sheets and the tab bar
     border: "rgba(255,255,255,0.08)",
     overlay: "rgba(3,2,10,0.72)",
 

@@ -78,3 +78,7 @@ artifacts/mobile/
 - **Screens own their sub-components.** A component used by one screen lives in that feature's `components/`; once two screens need it, move it to `src/components/`.
 - **Data in, UI out.** Anything that reads or writes the backend goes through `state/AppContext` (or a feature-level query like the community chat); screens don't talk to Supabase directly except for chat messages.
 - Imports use the `@/` alias for `src/`, e.g. `import { Button } from "@/components/ui"`.
+
+## The shared sky
+
+The star field is drawn **once**, behind the whole navigator (`SkyHost` in `src/app/_layout.tsx`). Screens never draw their own background: they wrap themselves in `<Sky variant="subtle">` (or `"starry"` for forms, `"full"` for the welcome screen) and stay transparent. Cards and the tab bar use **opaque** surface colours (`theme/themes.ts`), so stars never show through text. To change the sky, edit `components/cosmic/CosmicBackground.tsx`.

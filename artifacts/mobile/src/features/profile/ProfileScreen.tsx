@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CosmicBackground } from "@/components/cosmic/CosmicBackground";
+import { Sky } from "@/components/cosmic/Sky";
 import { Chip } from "@/components/ui";
 import { PERSONALITY_TYPES } from "@/data/mockData";
 import { ENNEAGRAM_TYPES, SOCIONICS_TYPES } from "@/data/typeInsights";
@@ -46,7 +46,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <CosmicBackground>
+    <Sky variant="subtle">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 16, paddingHorizontal: 20, paddingBottom: insets.bottom + 120, gap: 22 }}>
         <ProfileHeader onEditName={() => setEditing("name")} onEditBio={() => setEditing("bio")} />
 
@@ -93,7 +93,7 @@ export default function ProfileScreen() {
           onPick={(v) => void saveProfile({ [picking]: v })}
         />
       )}
-    </CosmicBackground>
+    </Sky>
   );
 }
 

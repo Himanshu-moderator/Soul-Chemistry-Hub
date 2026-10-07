@@ -6,6 +6,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { DarkTheme, ThemeProvider as NavigationTheme } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useCallback, useEffect, useState } from "react";
@@ -14,9 +15,11 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { Feather, Ionicons } from "@expo/vector-icons";
 
 import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
 import { SplashOverlay } from "@/components/cosmic/SplashOverlay";
+import { SkyHost, SkyProvider } from "@/components/cosmic/Sky";
 import { RouteGate } from "@/components/navigation/RouteGate";
 import { AppProvider } from "@/state/AppContext";
 import { AuthProvider } from "@/state/AuthContext";
@@ -25,6 +28,10 @@ import { ThemeProvider } from "@/theme/ThemeProvider";
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+// The navigator paints a background behind every screen by default. Make it clear
+// so the shared sky (see components/cosmic/Sky.tsx) shows through.
+const navigationTheme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: "transparent", card: "transparent", border: "transparent" } };
 
 // The animated intro plays once per launch, not every time this layout remounts.
 let introPlayed = false;
@@ -41,11 +48,15 @@ function WebFrame({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  // Text and icon fonts are loaded together, before anything is drawn, so a slow
+  // first load can't leave serif text and empty icon boxes on screen.
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    ...Feather.font,
+    ...Ionicons.font,
   });
   const [intro, setIntro] = useState(!introPlayed);
   const finishIntro = useCallback(() => {
@@ -57,7 +68,8 @@ export default function RootLayout() {
     if (fontsLoaded || fontError) SplashScreen.hideAsync();
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+  // While fonts load, show the app's own dark background instead of a white flash.
+  if (!fontsLoaded && !fontError) return <View style={{ flex: 1, backgroundColor: "#06050F" }} />;
 
   return (
     <SafeAreaProvider>
@@ -70,7 +82,10 @@ export default function RootLayout() {
                   <KeyboardProvider>
                     <StatusBar style="light" />
                     <WebFrame>
-                      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#06050F" }, animation: "fade" }}>
+                      <NavigationTheme value={navigationTheme}>
+                      <SkyProvider>
+                      <SkyHost />
+                      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" }, animation: "fade" }}>
                         <Stack.Screen name="index" />
                         <Stack.Screen name="auth" />
                         <Stack.Screen name="(tabs)" />
@@ -78,6 +93,8 @@ export default function RootLayout() {
                         <Stack.Screen name="community/[id]" options={{ animation: "slide_from_right" }} />
                       </Stack>
                       <RouteGate />
+                      </SkyProvider>
+                      </NavigationTheme>
                       {intro && <SplashOverlay onDone={finishIntro} />}
                     </WebFrame>
                   </KeyboardProvider>

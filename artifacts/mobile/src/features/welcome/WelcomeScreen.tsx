@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CosmicBackground } from "@/components/cosmic/CosmicBackground";
+import { Sky } from "@/components/cosmic/Sky";
 import { LogoMark } from "@/components/brand/Logo";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/state/AuthContext";
@@ -35,7 +35,7 @@ export default function WelcomeScreen() {
   const goAuth = (mode: "signup" | "signin") => router.push({ pathname: "/auth", params: { mode } } as never);
 
   return (
-    <CosmicBackground variant="full">
+    <Sky variant="full">
       <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom + 24 }]}>
         <Animated.View
           style={[
@@ -65,7 +65,7 @@ export default function WelcomeScreen() {
           </Text>
         </Animated.View>
       </View>
-    </CosmicBackground>
+    </Sky>
   );
 }
 

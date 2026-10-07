@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CosmicBackground } from "@/components/cosmic/CosmicBackground";
+import { Sky } from "@/components/cosmic/Sky";
 import { LogoMark } from "@/components/brand/Logo";
 import { Button, IconButton, TextField } from "@/components/ui";
 import { useAuth } from "@/state/AuthContext";
@@ -79,7 +79,7 @@ export default function AuthScreen() {
   const form = !done ? COPY[step as "signin" | "signup" | "forgot"] : null;
 
   return (
-    <CosmicBackground variant="starry">
+    <Sky variant="starry">
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
@@ -175,7 +175,7 @@ export default function AuthScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
-    </CosmicBackground>
+    </Sky>
   );
 }
 

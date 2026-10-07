@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CosmicBackground } from "@/components/cosmic/CosmicBackground";
+import { Sky } from "@/components/cosmic/Sky";
 import { ChatThemeSheet } from "@/components/chat/ChatThemeSheet";
 import { IconButton } from "@/components/ui";
 import { CONNECTIONS } from "@/data/mockData";
@@ -72,7 +72,7 @@ export default function ChatsScreen() {
   const bottom = insets.bottom + 120;
 
   return (
-    <CosmicBackground>
+    <Sky variant="subtle">
       <View style={{ flex: 1, paddingTop: insets.top + 10 }}>
         {section === "chats" ? (
           <ChatList search={search} onOpen={setOpen} bottomPadding={bottom} header={header} />
@@ -82,7 +82,7 @@ export default function ChatsScreen() {
       </View>
       <DirectChat contact={open} onClose={() => setOpen(null)} />
       <ChatThemeSheet visible={themeOpen} onClose={() => setThemeOpen(false)} />
-    </CosmicBackground>
+    </Sky>
   );
 }
 

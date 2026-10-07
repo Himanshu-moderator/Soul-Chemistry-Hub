@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CosmicBackground } from "@/components/cosmic/CosmicBackground";
+import { Sky } from "@/components/cosmic/Sky";
 import { IconButton } from "@/components/ui";
 import { COMMUNITIES } from "@/data/mockData";
 import { useApp } from "@/state/AppContext";
+import { useAuth } from "@/state/AuthContext";
 import { useStyles } from "@/theme/ThemeProvider";
 import type { Colors } from "@/theme/themes";
 import { AiChatStep } from "./steps/AiChatStep";
@@ -20,8 +21,8 @@ type Step = "basics" | "finder" | "ai" | "quiz" | "grid" | "communities" | "done
 // Where the progress bar sits for steps that don't report their own progress.
 const PROGRESS: Record<Step, number> = { basics: 0.1, finder: 0.25, ai: 0.3, quiz: 0.3, grid: 0.5, communities: 0.85, done: 1 };
 
-// Where "back" goes from each step (none for the first and last).
-const BACK: Partial<Record<Step, Step>> = { finder: "basics", ai: "finder", quiz: "finder", grid: "finder", communities: "finder" };
+// Where "back" goes from each step. The first step leaves onboarding altogether.
+const BACK: Partial<Record<Step, Step>> = { finder: "basics", ai: "finder", quiz: "finder", grid: "finder", communities: "finder", done: "communities" };
 
 const isPlaceholderName = (n: string) => n === "Alex Rivera";
 const isPlaceholderUser = (u: string) => !u || u === "@new_member" || u === "@alex_rivera";
@@ -32,6 +33,7 @@ export default function OnboardingScreen() {
   const styles = useStyles(makeStyles);
   const { profile, saveProfile, updateProfile, isUsernameFree, joinedCommunities, toggleCommunity, setOnboarded } = useApp();
 
+  const { signOut } = useAuth();
   const [step, setStep] = useState<Step>("basics");
   const [type, setType] = useState("");
 
@@ -80,12 +82,14 @@ export default function OnboardingScreen() {
   };
 
   const back = BACK[step];
+  // Going back from the very first step returns to the welcome screen (this signs out of a demo or a fresh account).
+  const goBack = () => (back ? go(back) : void signOut());
 
   return (
-    <CosmicBackground variant="starry">
+    <Sky variant="starry">
       <View style={[styles.root, { paddingTop: insets.top + 10, paddingBottom: insets.bottom }]}>
         <View style={styles.top}>
-          {back ? <IconButton icon="arrow-left" label="Back" onPress={() => go(back)} /> : <View style={{ width: 40 }} />}
+          <IconButton icon="arrow-left" label="Back" onPress={goBack} />
           <View style={styles.track}>
             <Animated.View style={[styles.fill, { width: progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) }]} />
           </View>
@@ -100,7 +104,7 @@ export default function OnboardingScreen() {
         {step === "communities" && <CommunitiesStep key={type} initial={communitiesFor()} onDone={onCommunities} />}
         {step === "done" && <DoneStep type={type || profile.mbti} onEnter={() => setOnboarded(true)} />}
       </View>
-    </CosmicBackground>
+    </Sky>
   );
 }
 

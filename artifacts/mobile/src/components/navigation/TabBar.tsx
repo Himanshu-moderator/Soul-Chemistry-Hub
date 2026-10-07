@@ -1,6 +1,5 @@
 import React from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { BlurView } from "expo-blur";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -59,10 +58,8 @@ export function TabBar({ state, navigation }: TabBarProps) {
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <View style={styles.bar}>
-        {Platform.OS !== "android" ? (
-          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-        ) : null}
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surfaceSolid, opacity: Platform.OS === "android" ? 0.96 : 0.72 }]} />
+        {/* Solid, not blurred: a see-through bar lets list text show through it and looks cluttered. */}
+        <View style={[StyleSheet.absoluteFill, styles.barBg]} />
 
         {TABS.map((tab) => {
           const route = state.routes.find((r) => r.name === tab.name);
@@ -115,6 +112,7 @@ const makeStyles = (c: Colors) =>
       borderWidth: 1,
       borderColor: c.border,
     },
+    barBg: { backgroundColor: c.surfaceSolid, borderRadius: 28 },
     item: { flex: 1, alignItems: "center", justifyContent: "center", gap: 4, height: "100%", paddingTop: 6 },
     label: { fontFamily: font.medium, fontSize: 10.5 },
     centerSlot: { flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 4 },
