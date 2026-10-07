@@ -73,7 +73,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
                 <View style={[styles.orbGlow, focused && { opacity: 1 }]} />
                 <LinearGradient colors={colors.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.orb}>
                   <View style={styles.orbRing} />
-                  <Ionicons name="planet" size={26} color="#FFFFFF" />
+                  <Ionicons name="planet" size={24} color="#FFFFFF" />
                 </LinearGradient>
                 <Text style={[styles.label, { color }]}>Soul</Text>
               </Pressable>
@@ -105,14 +105,14 @@ const makeStyles = (c: Colors) =>
     bar: {
       flexDirection: "row",
       alignItems: "flex-end",
-      height: 68,
-      borderRadius: 28,
+      height: 64,
+      borderRadius: 26,
       overflow: "visible",
       paddingBottom: 9,
       borderWidth: 1,
       borderColor: c.border,
     },
-    barBg: { backgroundColor: c.surfaceSolid, borderRadius: 28 },
+    barBg: { backgroundColor: c.surfaceSolid, borderRadius: 26 },
     item: { flex: 1, alignItems: "center", justifyContent: "center", gap: 4, height: "100%", paddingTop: 6 },
     label: { fontFamily: font.medium, fontSize: 10.5 },
     centerSlot: { flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 4 },
@@ -126,10 +126,10 @@ const makeStyles = (c: Colors) =>
       opacity: 0.35,
     },
     orb: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      marginTop: -22,
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      marginTop: -20,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 3,

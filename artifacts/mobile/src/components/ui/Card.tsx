@@ -24,7 +24,7 @@ export function Card({ children, style, padding = 16, tinted = false }: Props) {
           colors={[colors.accent + "40", colors.accentAlt + "26"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[StyleSheet.absoluteFill, { borderRadius: radius.lg }]}
+          style={[StyleSheet.absoluteFill, { borderRadius: radius.xl }]}
         />
         <View style={{ padding }}>{children}</View>
       </View>
@@ -35,5 +35,5 @@ export function Card({ children, style, padding = 16, tinted = false }: Props) {
 
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
-    card: { backgroundColor: c.surface, borderRadius: radius.lg, overflow: "hidden" },
+    card: { backgroundColor: c.surface, borderRadius: radius.xl, overflow: "hidden", borderWidth: 1, borderColor: c.border },
   });

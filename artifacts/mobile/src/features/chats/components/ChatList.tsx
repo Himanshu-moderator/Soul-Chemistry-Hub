@@ -2,7 +2,8 @@ import React from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar, TypeBadge } from "@/components/ui";
 import { CONNECTIONS } from "@/data/mockData";
-import { useStyles } from "@/theme/ThemeProvider";
+import { groupedRow } from "@/components/ui/grouped";
+import { useStyles, useTheme } from "@/theme/ThemeProvider";
 import { font } from "@/theme/tokens";
 import type { Colors } from "@/theme/themes";
 
@@ -31,6 +32,7 @@ interface Props {
 // The inbox: sample conversations you can open and reply to.
 export function ChatList({ search, onOpen, bottomPadding, header }: Props) {
   const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   const items = CONNECTIONS.map((c, i) => ({ contact: c, preview: PREVIEWS[i % 8], time: TIMES[i % 8], unread: UNREAD[i % 8] })).filter(
     (x) => !search || x.contact.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -43,8 +45,8 @@ export function ChatList({ search, onOpen, bottomPadding, header }: Props) {
       ListHeaderComponent={header}
       contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: bottomPadding }}
       ListEmptyComponent={<Text style={styles.empty}>No conversations found</Text>}
-      renderItem={({ item }) => (
-        <Pressable onPress={() => onOpen(item.contact)} style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}>
+      renderItem={({ item, index }) => (
+        <Pressable onPress={() => onOpen(item.contact)} style={({ pressed }) => [styles.row, groupedRow(colors, index, items.length), pressed && { opacity: 0.7 }]}>
           <Avatar name={item.contact.name} size={52} mbti={item.contact.mbti} online={item.contact.isOnline} />
           <View style={{ flex: 1, gap: 3 }}>
             <View style={styles.nameRow}>
@@ -73,7 +75,7 @@ export function ChatList({ search, onOpen, bottomPadding, header }: Props) {
 
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
-    row: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 11 },
+    row: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12 },
     nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
     name: { color: c.text, fontFamily: font.semibold, fontSize: 16, flexShrink: 1 },
     preview: { color: c.textSecondary, fontFamily: font.regular, fontSize: 14 },

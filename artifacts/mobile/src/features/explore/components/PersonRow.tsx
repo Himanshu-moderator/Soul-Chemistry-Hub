@@ -23,7 +23,7 @@ function PersonRowImpl({ person, following, onToggleFollow }: Props) {
 
   return (
     <View style={styles.row}>
-      <Avatar name={person.name} size={50} mbti={person.mbti} />
+      <Avatar name={person.name} size={46} mbti={person.mbti} />
       <View style={styles.info}>
         <View style={styles.nameRow}>
           <Text style={styles.name} numberOfLines={1}>
@@ -51,8 +51,7 @@ function PersonRowImpl({ person, following, onToggleFollow }: Props) {
           }}
           style={[styles.follow, following && { backgroundColor: colors.accentSoft }]}
         >
-          <Feather name={following ? "check" : "plus"} size={14} color={following ? colors.accent : colors.text} />
-          <Text style={[styles.followText, following && { color: colors.accent }]}>{following ? "Following" : "Follow"}</Text>
+          <Feather name={following ? "check" : "plus"} size={16} color={following ? colors.accent : colors.text} />
         </Pressable>
       </View>
     </View>
@@ -67,9 +66,8 @@ const makeStyles = (c: Colors) =>
     name: { color: c.text, fontFamily: font.semibold, fontSize: 16, flexShrink: 1 },
     job: { color: c.textSecondary, fontFamily: font.regular, fontSize: 13.5 },
     meta: { color: c.textTertiary, fontFamily: font.regular, fontSize: 12 },
-    right: { alignItems: "flex-end", gap: 8 },
-    follow: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: c.surfaceStrong, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
-    followText: { color: c.text, fontFamily: font.semibold, fontSize: 12 },
+    right: { alignItems: "flex-end", gap: 8, paddingLeft: 4 },
+    follow: { width: 34, height: 34, alignItems: "center", justifyContent: "center", backgroundColor: c.surfaceStrong, borderRadius: 17 },
   });
 
 // Re-render a row only when its own data changes (the list is long).

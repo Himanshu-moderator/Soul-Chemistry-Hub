@@ -9,6 +9,7 @@ import { Avatar, Card, Chip, CoinPill, IconButton } from "@/components/ui";
 import { FAMOUS_PEOPLE, PERSONALITY_TYPES } from "@/data/mockData";
 import { useApp } from "@/state/AppContext";
 import { useStyles, useTheme } from "@/theme/ThemeProvider";
+import { groupedRow } from "@/components/ui/grouped";
 import { font, radius, type } from "@/theme/tokens";
 import type { Colors } from "@/theme/themes";
 import { CheckinSheet } from "./components/CheckinSheet";
@@ -86,9 +87,8 @@ export default function ExploreScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }} style={{ marginHorizontal: -20, paddingLeft: 20 }}>
         {quick.map((t) => (
           <Pressable key={t.title} onPress={t.onPress} style={({ pressed }) => [styles.tile, pressed && { transform: [{ scale: 0.97 }] }]}>
-            <LinearGradient colors={[colors.accent + "55", colors.accentAlt + "22"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             <View style={styles.tileIcon}>
-              <Feather name={t.icon} size={18} color={colors.text} />
+              <Feather name={t.icon} size={18} color={colors.accent} />
             </View>
             <Text style={styles.tileTitle}>{t.title}</Text>
             <Text style={styles.tileSub}>{t.sub}</Text>
@@ -138,7 +138,11 @@ export default function ExploreScreen() {
             <Text style={styles.emptySub}>{filter === "Following" ? "Follow someone and they'll show up here." : "Try a different search or filter."}</Text>
           </View>
         }
-        renderItem={({ item }) => <PersonRow person={item} following={followedPeople.includes(item.id)} onToggleFollow={() => toggleFollow(item.id)} />}
+        renderItem={({ item, index }) => (
+          <View style={groupedRow(colors, index, people.length)}>
+            <PersonRow person={item} following={followedPeople.includes(item.id)} onToggleFollow={() => toggleFollow(item.id)} />
+          </View>
+        )}
       />
 
       <CheckinSheet visible={checkin} onClose={() => setCheckin(false)} onCorrect={(c) => void claimCheckin(c)} />
@@ -156,8 +160,8 @@ const makeStyles = (c: Colors) =>
     topRight: { flexDirection: "row", alignItems: "center", gap: 10 },
     search: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: c.surface, borderRadius: radius.pill, paddingHorizontal: 18 },
     searchInput: { flex: 1, color: c.text, fontFamily: font.regular, fontSize: 15, paddingVertical: 14, outlineStyle: "none" } as object,
-    tile: { width: 148, borderRadius: radius.lg, padding: 14, gap: 3, overflow: "hidden", backgroundColor: c.surface },
-    tileIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.14)", alignItems: "center", justifyContent: "center", marginBottom: 8 },
+    tile: { width: 148, borderRadius: radius.xl, padding: 14, gap: 3, overflow: "hidden", backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
+    tileIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: c.accentSoft, alignItems: "center", justifyContent: "center", marginBottom: 10 },
     tileTitle: { color: c.text, fontFamily: font.semibold, fontSize: 15 },
     tileSub: { color: c.textSecondary, fontFamily: font.regular, fontSize: 12 },
     checkin: { flexDirection: "row", alignItems: "center", gap: 12 },
