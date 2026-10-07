@@ -7,7 +7,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+// Just the parts of the tab bar props this component uses (the navigation
+// package is only a transitive dependency of expo-router, so it can't be imported).
+type TabRoute = { key: string; name: string };
+type BottomTabBarProps = {
+  state: { index: number; routes: TabRoute[] };
+  navigation: {
+    emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => { defaultPrevented: boolean };
+    navigate: (name: string) => void;
+  };
+};
 import { BlurView } from "expo-blur";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,6 +41,8 @@ function CoinHeartIcon({ focused, color }: { focused: boolean; color: string }) 
 const coinHeart = StyleSheet.create({
   outer: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
 });
+
+const TAB_ORDER = ["index", "chats", "soul", "profile", "market"];
 
 function getTabIcon(routeName: string, focused: boolean, color: string) {
   const sz = 22;
@@ -124,8 +135,11 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     return () => { scaleLoop.stop(); glowLoop.stop(); };
   }, []);
 
-  const leftRoutes = state.routes.slice(0, 2);
-  const rightRoutes = state.routes.slice(3);
+  // Only the five real tabs belong in the bar (hidden routes like the old
+  // standalone communities screen must not show up).
+  const visibleRoutes = state.routes.filter((r) => TAB_ORDER.includes(r.name));
+  const leftRoutes = visibleRoutes.slice(0, 2);
+  const rightRoutes = visibleRoutes.slice(3);
   const soulRoute = state.routes[soulIdx];
 
   const handleTabPress = (route: { key: string; name: string }, isFocused: boolean) => {

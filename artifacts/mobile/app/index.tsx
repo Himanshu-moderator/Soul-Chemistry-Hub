@@ -81,13 +81,14 @@ export default function AuthScreen() {
     ).start();
   }, []);
 
-  const handleGoogle = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace("/onboarding");
-  };
+  // Returning visitors skip the splash and onboarding.
+  const { hydrated, onboarded } = useApp();
+  useEffect(() => {
+    if (hydrated && onboarded) router.replace("/(tabs)");
+  }, [hydrated, onboarded]);
 
-  const handleMore = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handleStart = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.replace("/onboarding");
   };
 
@@ -120,26 +121,16 @@ export default function AuthScreen() {
 
       {/* Bottom section */}
       <Animated.View style={[styles.bottomSection, { opacity: fadeIn, transform: [{ translateY: slideUp }], paddingBottom: insets.bottom + 24 }]}>
-        {/* Google button */}
-        <TouchableOpacity style={styles.googleBtn} onPress={handleGoogle} activeOpacity={0.85}>
-          <View style={styles.googleIcon}>
-            <Text style={styles.googleG}>G</Text>
-          </View>
-          <Text style={styles.googleBtnText}>Continue with Google</Text>
+        {/* Start */}
+        <TouchableOpacity style={styles.googleBtn} onPress={handleStart} activeOpacity={0.85}>
+          <Text style={styles.googleBtnText}>Get started</Text>
+          <Feather name="arrow-right" size={18} color="#FFF" style={{ marginLeft: 8 }} />
         </TouchableOpacity>
 
-        {/* More options */}
-        <TouchableOpacity style={styles.moreBtn} onPress={handleMore}>
-          <Text style={styles.moreText}>More</Text>
-        </TouchableOpacity>
-
-        {/* Terms */}
+        {/* Honest note: this is a prototype with no accounts */}
         <Text style={styles.termsText}>
-          By continuing, you confirm that you are above 13 and{"\n"}
-          agree to our{" "}
-          <Text style={styles.termsLink}>Terms of Service</Text>
-          {" "}and{" "}
-          <Text style={styles.termsLink}>Privacy Policy</Text>.
+          Prototype · no account needed{"\n"}
+          Everything you do stays on this device
         </Text>
       </Animated.View>
     </View>

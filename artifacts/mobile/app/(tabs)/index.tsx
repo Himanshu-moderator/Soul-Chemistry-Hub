@@ -22,10 +22,10 @@ import { CoinBadge } from "@/components/CoinBadge";
 
 type FilterType = "All" | "Trending" | "Following";
 
-const FEATURE_CARDS = [
-  { id: "f1", title: "Famous INTJ", sub: "Celebrities, characters, music", icon: "⭐", color: "#7C3AED" },
-  { id: "f2", title: "Chemistry", sub: "Who feels like home to INTJ?", icon: "◎", color: "#0891B2", isChemistry: true },
-  { id: "f3", title: "INTJ Wiki", sub: "Strengths, soul, growth & more", icon: "🧠", color: "#065F46" },
+const featureCards = (mbti: string) => [
+  { id: "f1", title: `Famous ${mbti}`, sub: "Celebrities, characters, music", icon: "⭐", color: "#7C3AED" },
+  { id: "f2", title: "Chemistry", sub: `Who feels like home to ${mbti}?`, icon: "◎", color: "#0891B2", isChemistry: true },
+  { id: "f3", title: `${mbti} Wiki`, sub: "Strengths, soul, growth & more", icon: "🧠", color: "#065F46" },
   { id: "f4", title: "Community", sub: "MBTI, creativity & life", icon: "👥", color: "#1D4ED8" },
 ];
 
@@ -145,7 +145,7 @@ export default function PersonalitiesScreen() {
           <View style={styles.listHeader}>
             {/* Feature cards grid */}
             <View style={styles.featureGrid}>
-              {FEATURE_CARDS.map((card) => (
+              {featureCards(profile.mbti).map((card) => (
                 <TouchableOpacity
                   key={card.id}
                   style={[styles.featureCard, { borderColor: card.color + "30" }]}

@@ -12,9 +12,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import { COLORS } from "@/constants/colors";
 import { CONNECTIONS, PERSONALITY_TYPES, THEMES } from "@/data/mockData";
 import { useApp } from "@/context/AppContext";
+import { bigFiveFor } from "@/lib/personality";
 import { GlassCard } from "@/components/GlassCard";
 import { TypeBadge } from "@/components/TypeBadge";
 import { AvatarCircle } from "@/components/AvatarCircle";
@@ -47,23 +49,28 @@ const AI_INSIGHTS: Record<string, { strength: string; growth: string; career: st
 };
 
 // AI conversation messages
-const AI_CHAT_INIT = [
+const AI_CHAT_INIT: AiMsg[] = [
   { id: "ai1", from: "ai", text: "Hi! I'm your personal PersonaAI 🔮 Ask me anything about your personality, compatibility, or growth paths." },
 ];
 
 type AiMsg = { id: string; from: "ai" | "user"; text: string };
 
-const AI_REPLIES: Record<string, string> = {
-  compatible: "Based on your INTJ profile, your top 3 compatible types are ENFP (Golden Pair — 96%), ENTP (Stimulating — 88%), and INFP (Complementary — 84%). Shall I explain why?",
-  strengths: "Your top strengths as an INTJ: 1) Strategic long-term thinking, 2) Pattern recognition & systems design, 3) Deep focus and execution. You naturally excel at turning ideas into reality.",
-  weakness: "Your main growth areas: 1) Opening up emotionally takes effort, 2) You can be overly critical, 3) Perfectionism can stall progress. Remember — vulnerability is a strength.",
-  career: "Top career paths for INTJ: Science & Research, Software Engineering, Architecture, Strategic Management, Academic Philosophy. You thrive in roles that reward independent thinking.",
-  default: "That's a great question! As an INTJ, you're wired for depth and strategy. I'd encourage you to explore the Soul tab for chemistry insights, or try the Big 5 breakdown in your profile.",
-};
+// Scripted PersonaAI answers built from the per-type notes above, so they match
+// whichever type the user actually has.
+function aiReply(mbti: string, query: string): string {
+  const info = AI_INSIGHTS[mbti];
+  if (!info) return `I don't have notes on ${mbti} yet. Try the Soul tab for chemistry insights.`;
+  const q = query.toLowerCase();
+  if (q.includes("compat") || q.includes("match") || q.includes("love")) return `For an ${mbti}: ${info.love}`;
+  if (q.includes("strength")) return `Your top strength as an ${mbti}: ${info.strength}.`;
+  if (q.includes("weak") || q.includes("growth")) return `A growth area for ${mbti}: ${info.growth}.`;
+  if (q.includes("career") || q.includes("job")) return `Careers that suit an ${mbti}: ${info.career}.`;
+  return `Good question! Try asking about your strengths, growth areas, compatible types or careers as an ${mbti}.`;
+}
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, updateProfile, coins, isPremium, selectedTheme, setSelectedTheme } = useApp();
+  const { profile, updateProfile, coins, isPremium, selectedTheme, setSelectedTheme, resetApp } = useApp();
 
   const [activeSection, setActiveSection] = useState<"profile" | "ai" | "themes">("profile");
   const [editVisible, setEditVisible] = useState(false);
@@ -114,11 +121,7 @@ export default function ProfileScreen() {
     setAiInput("");
     setAiTyping(true);
     setTimeout(() => {
-      const reply = query.includes("compat") ? AI_REPLIES.compatible
-        : query.includes("strength") ? AI_REPLIES.strengths
-        : query.includes("weak") || query.includes("growth") ? AI_REPLIES.weakness
-        : query.includes("career") || query.includes("job") ? AI_REPLIES.career
-        : AI_REPLIES.default;
+      const reply = aiReply(profile.mbti, query);
       const aiMsg: AiMsg = { id: `ai${Date.now()}`, from: "ai", text: reply };
       setAiMessages((prev) => [...prev, aiMsg]);
       setAiTyping(false);
@@ -284,6 +287,19 @@ export default function ProfileScreen() {
               <Feather name="arrow-right" size={16} color={COLORS.accent} />
             </GlassCard>
           </TouchableOpacity>
+
+          {/* Everything here is saved on this device only, so offer a clean slate */}
+          <TouchableOpacity
+            accessibilityRole="button"
+            onPress={async () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              await resetApp();
+              router.replace("/");
+            }}
+            style={{ alignSelf: "center", paddingVertical: 14, paddingHorizontal: 18 }}
+          >
+            <Text style={{ color: COLORS.textTertiary, fontSize: 13 }}>Reset demo and start over</Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
 
@@ -302,9 +318,9 @@ export default function ProfileScreen() {
               <View style={styles.aiHeaderRow}>
                 <View style={styles.aiHeaderLeft}>
                   <Text style={{ fontSize: 36 }}>🤖</Text>
-                  <View>
+                  <View style={{ flexShrink: 1 }}>
                     <Text style={styles.aiHeaderTitle}>PersonaAI</Text>
-                    <Text style={styles.aiHeaderSub}>Powered by personality science</Text>
+                    <Text style={styles.aiHeaderSub} numberOfLines={1}>Your personality guide</Text>
                   </View>
                 </View>
                 <View style={[styles.typeBigPill, { backgroundColor: COLORS.typeColor + "20", borderColor: COLORS.typeColor + "50" }]}>
@@ -332,7 +348,7 @@ export default function ProfileScreen() {
             {/* Big 5 from AI */}
             <GlassCard>
               <Text style={styles.big5Title}>AI Big 5 Analysis</Text>
-              {Object.entries(profile.bigFive).map(([key, val]) => {
+              {Object.entries(bigFiveFor(profile.mbti)).map(([key, val]) => {
                 const labels: Record<string, string> = { O: "Openness", C: "Conscientiousness", E: "Extraversion", A: "Agreeableness", N: "Neuroticism" };
                 const color = val > 70 ? COLORS.accent : val > 40 ? COLORS.accentBlue : COLORS.accentGreen;
                 return (
@@ -585,7 +601,7 @@ const styles = StyleSheet.create({
   aiContent: { paddingHorizontal: 20, gap: 14, paddingTop: 8 },
   aiHeaderCard: { gap: 10 },
   aiHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  aiHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  aiHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 12, flexShrink: 1 },
   aiHeaderTitle: { color: COLORS.textPrimary, fontFamily: "Inter_700Bold", fontSize: 18 },
   aiHeaderSub: { color: COLORS.accent, fontFamily: "Inter_400Regular", fontSize: 12 },
   typeBigPill: { borderRadius: 16, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1.5 },

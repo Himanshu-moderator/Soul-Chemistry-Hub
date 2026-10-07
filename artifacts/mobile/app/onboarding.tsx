@@ -20,6 +20,7 @@ import * as Haptics from "expo-haptics";
 import { COLORS } from "@/constants/colors";
 import { PERSONALITY_TYPES } from "@/data/mockData";
 import { useApp } from "@/context/AppContext";
+import { COMPATIBLE_TYPES, typeFromAnswers } from "@/lib/personality";
 
 const { width } = Dimensions.get("window");
 
@@ -83,20 +84,9 @@ const AI_FLOW: AiMsg[] = [
   },
 ];
 
-const AI_TYPE_RESULTS: Record<string, string> = {
-  "0,0,0": "INTJ", "0,0,1": "INTP", "0,0,2": "INFJ", "0,0,3": "INTJ",
-  "0,1,0": "ISTJ", "0,1,1": "ISFP", "0,1,2": "ISFJ", "0,1,3": "INFP",
-  "1,0,0": "ENTJ", "1,0,1": "ENTP", "1,0,2": "ENFJ", "1,0,3": "ENTP",
-  "1,1,0": "ESTJ", "1,1,1": "ESTP", "1,1,2": "ESFJ", "1,1,3": "ENFP",
-  "2,0,0": "INFJ", "2,0,1": "INTP", "2,0,2": "INFP", "2,0,3": "INFJ",
-  "2,1,0": "ISFJ", "2,1,1": "ISFP", "2,1,2": "ESFJ", "2,1,3": "ENFP",
-  "3,0,0": "ENTP", "3,0,1": "ENTP", "3,0,2": "ENFP", "3,0,3": "ENFP",
-  "3,1,0": "ESTP", "3,1,1": "ESFP", "3,1,2": "ESFJ", "3,1,3": "ESFP",
-};
-
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
-  const { updateProfile } = useApp();
+  const { updateProfile, setOnboarded } = useApp();
   const [step, setStep] = useState<Step>("welcome");
   const [selectedType, setSelectedType] = useState("");
   const [quizIdx, setQuizIdx] = useState(0);
@@ -124,7 +114,7 @@ export default function OnboardingScreen() {
     const userMsg: AiMsg = { id: `u${aiFlowIdx}`, from: "user", text: currentFlow.options[optIdx] };
     const newChoices = [...aiChoices, optIdx];
     setAiChoices(newChoices);
-    setAiMessages((prev) => prev.map((m) => ({ ...m, options: undefined })).concat(userMsg));
+    setAiMessages((prev) => [...prev.map((m): AiMsg => ({ ...m, options: undefined })), userMsg]);
     setAiTyping(true);
 
     const nextIdx = aiFlowIdx + 1;
@@ -138,8 +128,8 @@ export default function OnboardingScreen() {
         if (nextIdx === AI_FLOW.length - 1) {
           // Last AI message — compute type
           setTimeout(() => {
-            const key = `${newChoices[0] || 0},${newChoices[1] ? Math.min(newChoices[1], 1) : 0},${newChoices[2] || 0}`;
-            const computed = AI_TYPE_RESULTS[key] || "INTJ";
+            // choices[0] is the opening "ready?" answer; the next three are the real questions
+            const computed = typeFromAnswers(newChoices[1] ?? 0, newChoices[2] ?? 0, newChoices[3] ?? 0);
             setSelectedType(computed);
             updateProfile({ mbti: computed } as any);
             setTimeout(() => { setStep("complete"); animateProgress(1); }, 1800);
@@ -400,9 +390,9 @@ export default function OnboardingScreen() {
 
           <View style={styles.completeInsights}>
             {[
-              { icon: "🧠", text: `${selectedType}s are known for deep strategic thinking` },
-              { icon: "🤝", text: `Best chemistry with ${PERSONALITY_TYPES.find(t => t.code === selectedType)?.name.includes("I") ? "ENFP & ENTP" : "INFP & INFJ"}` },
-              { icon: "🌟", text: "Your AI personality profile is ready to explore" },
+              { icon: "🧠", text: typeData ? `${typeData.name}: ${typeData.tagline.toLowerCase()}` : `You're an ${selectedType}` },
+              { icon: "🤝", text: `Often clicks with ${(COMPATIBLE_TYPES[selectedType] ?? ["ENFP", "INFJ"]).join(" & ")}` },
+              { icon: "🌟", text: "Your personality profile is ready to explore" },
             ].map((item, idx) => (
               <View key={idx} style={styles.insightRow}>
                 <Text style={{ fontSize: 18 }}>{item.icon}</Text>
@@ -413,7 +403,11 @@ export default function OnboardingScreen() {
 
           <TouchableOpacity
             style={styles.enterBtn}
-            onPress={() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); router.replace("/(tabs)"); }}
+            onPress={() => {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setOnboarded(true);
+              router.replace("/(tabs)");
+            }}
           >
             <Text style={styles.enterBtnText}>Enter PersonaDB</Text>
             <Feather name="arrow-right" size={18} color="#FFF" />

@@ -1,3 +1,4 @@
+import { bestPairs } from "@/lib/personality";
 import React, { useState, useRef, useEffect } from "react";
 import {
   Animated,
@@ -455,11 +456,7 @@ export default function SoulScreen() {
 
         {/* Compatibility pairs */}
         <Text style={[styles.sectionTitle, { marginTop: 4 }]}>Your Best Chemistry Types</Text>
-        {[
-          { type1: "INTJ", type2: "ENFP", score: 96, label: "Golden Pair" },
-          { type1: "INTJ", type2: "ENTP", score: 88, label: "Stimulating" },
-          { type1: "INTJ", type2: "INFP", score: 84, label: "Complementary" },
-        ].map((pair, i) => {
+        {bestPairs(profile.mbti).map((pair, i) => {
           const c1 = (COLORS.MBTI as Record<string, string>)[pair.type1] || COLORS.accent;
           const c2 = (COLORS.MBTI as Record<string, string>)[pair.type2] || COLORS.accentBlue;
           return (

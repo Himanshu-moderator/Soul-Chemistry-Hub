@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
+import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -20,6 +21,30 @@ import { AppProvider } from "@/context/AppContext";
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+// On desktop browsers the app is a phone-sized column centred on the page
+// instead of a stretched layout; on devices it is a no-op.
+function WebFrame({ children }: { children: React.ReactNode }) {
+  if (Platform.OS !== "web") return <>{children}</>;
+  return (
+    <View style={{ flex: 1, backgroundColor: "#05050A", alignItems: "center" }}>
+      <View
+        style={{
+          flex: 1,
+          width: "100%",
+          maxWidth: 440,
+          overflow: "hidden",
+          backgroundColor: "#000",
+          borderLeftWidth: 1,
+          borderRightWidth: 1,
+          borderColor: "#1A1A24",
+        }}
+      >
+        {children}
+      </View>
+    </View>
+  );
+}
 
 function RootLayoutNav() {
   return (
@@ -55,7 +80,9 @@ export default function RootLayout() {
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
                 <StatusBar style="light" />
-                <RootLayoutNav />
+                <WebFrame>
+                  <RootLayoutNav />
+                </WebFrame>
               </KeyboardProvider>
             </GestureHandlerRootView>
           </AppProvider>
