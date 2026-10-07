@@ -27,6 +27,43 @@ function seeded(seed: number) {
   };
 }
 
+// ------------------------------------------------------------- entrance
+
+// Where something that belongs at (x%, y%) starts its entrance: pushed out past the
+// screen edge, in the direction away from the centre, so everything gathers inwards.
+function outward(x: number, y: number): [number, number] {
+  const { width, height } = Dimensions.get("window");
+  const w = Math.min(width, 440);
+  const dx = (x - 50) / 50;
+  const dy = (y - 50) / 50;
+  const len = Math.hypot(dx, dy) || 1;
+  return [(dx / len) * w * 0.9, (dy / len) * height * 0.9];
+}
+
+// Entrance: given the shared progress value `g` (0 -> 1), the child glides in from
+// `from` to its place while fading in. `lag` (0 to 0.4) staggers the arrivals.
+// Without `g` it does nothing.
+function Gather({ g, from, lag = 0, children }: { g?: Animated.Value; from: [number, number]; lag?: number; children: React.ReactNode }) {
+  if (!g) return <>{children}</>;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          opacity: g.interpolate({ inputRange: [lag, lag + 0.5], outputRange: [0, 1], extrapolate: "clamp" }),
+          transform: [
+            { translateX: g.interpolate({ inputRange: [lag, 1], outputRange: [from[0], 0], extrapolate: "clamp" }) },
+            { translateY: g.interpolate({ inputRange: [lag, 1], outputRange: [from[1], 0], extrapolate: "clamp" }) },
+          ],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
 // ---------------------------------------------------------------- stars
 
 const COLS = 3;
@@ -50,7 +87,7 @@ function makeStars(): StarSpec[] {
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
       const id = row * COLS + col;
-      const kind = id % 3; // 0 tiny dot, 1 dot, 2 bigger glowing dot
+      const kind = (row + col) % 3; // 0 tiny dot, 1 dot, 2 bigger glowing dot (a diagonal pattern, so every column gets some)
       out.push({
         id,
         x: ((col + 0.15 + rand() * 0.7) / COLS) * 100,
@@ -134,7 +171,7 @@ function BigStar({ spec, k }: { spec: StarSpec; k: number }) {
   );
 }
 
-const Stars = memo(function Stars({ variant }: { variant: SkyVariant }) {
+const Stars = memo(function Stars({ variant, g }: { variant: SkyVariant; g?: Animated.Value }) {
   const specs = useMemo(makeStars, []);
   // The smaller dots breathe gently on shared loops; the bigger ones twinkle on their own.
   const loops = [useBreath(4200, 0), useBreath(5600, 900), useBreath(6800, 1800), useBreath(8000, 2700)];
@@ -143,28 +180,35 @@ const Stars = memo(function Stars({ variant }: { variant: SkyVariant }) {
   return (
     <>
       {specs.map((s) => {
-        if (s.glow) return <BigStar key={s.id} spec={s} k={k} />;
+        const lag = (s.id % 8) * 0.05;
+        if (s.glow)
+          return (
+            <Gather key={s.id} g={g} from={outward(s.x, s.y)} lag={lag}>
+              <BigStar spec={s} k={k} />
+            </Gather>
+          );
         const base = s.opacity * k;
         const opacity = loops[s.loop].interpolate({ inputRange: [0, 1], outputRange: [base * 0.35, base] });
         return (
-          <Animated.View
-            key={s.id}
-            pointerEvents="none"
-            style={{ position: "absolute", left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, marginLeft: -s.size / 2, marginTop: -s.size / 2, borderRadius: s.size, backgroundColor: "#FFFFFF", opacity }}
-          />
+          <Gather key={s.id} g={g} from={outward(s.x, s.y)} lag={lag}>
+            <Animated.View
+              pointerEvents="none"
+              style={{ position: "absolute", left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, marginLeft: -s.size / 2, marginTop: -s.size / 2, borderRadius: s.size, backgroundColor: "#FFFFFF", opacity }}
+            />
+          </Gather>
         );
       })}
     </>
   );
 });
 
-// A shooting star: a short bright streak that crosses the sky diagonally, top to
-// bottom and a bit sideways (28 degrees off vertical, heading down-left). The head
-// leads and the tail fades out behind it, above and to the right. Then it waits.
-const FALL_ANGLE = 28;
-const FALL_TAN = Math.tan((FALL_ANGLE * Math.PI) / 180);
+// A shooting star: a short bright streak that enters at the top right and slides
+// down-left along a gentle diagonal (29 degrees below horizontal), head first, its
+// tail fading out behind it (up and to the right). Then it waits and repeats.
+const FALL_DEG = 29;
+const FALL_SLOPE = Math.tan((FALL_DEG * Math.PI) / 180);
 
-function FallingStar({ left, delay, duration, brightness }: { left: string; delay: number; duration: number; brightness: number }) {
+function FallingStar({ top, delay, duration, brightness }: { top: string; delay: number; duration: number; brightness: number }) {
   const width = Math.min(Dimensions.get("window").width, 440);
   const p = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -180,18 +224,17 @@ function FallingStar({ left, delay, duration, brightness }: { left: string; dela
     return () => loop.stop();
   }, [p, delay, duration]);
 
-  const dx = width * 0.55;
-  const dy = dx / FALL_TAN;
+  const dx = width * 1.1;
   const translateX = p.interpolate({ inputRange: [0, 1], outputRange: [0, -dx] });
-  const translateY = p.interpolate({ inputRange: [0, 1], outputRange: [0, dy] });
-  const opacity = p.interpolate({ inputRange: [0, 0.1, 0.65, 1], outputRange: [0, brightness, brightness * 0.8, 0] });
+  const translateY = p.interpolate({ inputRange: [0, 1], outputRange: [0, dx * FALL_SLOPE] });
+  const opacity = p.interpolate({ inputRange: [0, 0.12, 0.7, 1], outputRange: [0, brightness, brightness * 0.8, 0] });
 
   return (
     <Animated.View
       pointerEvents="none"
-      style={{ position: "absolute", left: left as `${number}%`, top: "2%", opacity, transform: [{ translateX }, { translateY }, { rotate: `${90 + FALL_ANGLE}deg` }] }}
+      style={{ position: "absolute", left: "100%", top: top as `${number}%`, opacity, transform: [{ translateX }, { translateY }, { rotate: `${180 - FALL_DEG}deg` }] }}
     >
-      {/* the bright head is the right end, pointing down-left; the tail fades back up */}
+      {/* the bright head is the right end, pointing down-left; the tail fades back up-right */}
       <LinearGradient colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.4)", "#FFFFFF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: 96, height: 2, borderRadius: 2 }} />
     </Animated.View>
   );
@@ -327,14 +370,22 @@ interface Props {
   glow?: string;
   // Turn the stars off entirely.
   noStars?: boolean;
+  // Play the entrance: stars and planets gather in from the edges, fading in.
+  gather?: boolean;
   children?: React.ReactNode;
 }
 
-export function CosmicBackground({ variant = "subtle", sky, glow, noStars, children }: Props) {
+export function CosmicBackground({ variant = "subtle", sky, glow, noStars, gather, children }: Props) {
   const { colors } = useTheme();
   const lively = variant !== "subtle";
   const falling = FALLING_COUNT[variant];
   const k = STAR_BRIGHTNESS[variant];
+
+  const g = useMemo(() => (gather ? new Animated.Value(0) : undefined), [gather]);
+  useEffect(() => {
+    if (!g) return;
+    Animated.timing(g, { toValue: 1, duration: 2400, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [g]);
 
   return (
     <View style={styles.root}>
@@ -345,19 +396,27 @@ export function CosmicBackground({ variant = "subtle", sky, glow, noStars, child
 
       {!noStars && (
         <>
-          <Stars variant={variant} />
-          {falling >= 1 && <FallingStar left="92%" delay={3500} duration={8000} brightness={k} />}
-          {falling >= 2 && <FallingStar left="68%" delay={10000} duration={9000} brightness={k} />}
+          <Stars variant={variant} g={g} />
+          {falling >= 1 && <FallingStar top="7%" delay={3500} duration={8000} brightness={k} />}
+          {falling >= 2 && <FallingStar top="26%" delay={10000} duration={9000} brightness={k} />}
         </>
       )}
 
       {variant === "full" && (
         <>
           {/* Four planets, well apart. The big blue one and the ringed orange one spin slowly. */}
-          <Planet x="-6%" y="64%" size={180} colors={["#38BDF8", "#4F46E5"]} spinSeconds={150} seed={7} opacity={0.75} />
-          <Planet x="76%" y="15%" size={72} colors={["#FDC27A", "#F2711C"]} ring spinSeconds={110} seed={3} opacity={0.9} />
-          <Planet x="14%" y="12%" size={30} colors={["#C4B5FD", "#7C3AED"]} seed={5} opacity={0.8} />
-          <Planet x="90%" y="47%" size={24} colors={["#5EEAD4", "#0D9488"]} seed={9} opacity={0.8} />
+          <Gather g={g} from={outward(-6, 64)} lag={0.05}>
+            <Planet x="-6%" y="64%" size={180} colors={["#38BDF8", "#4F46E5"]} spinSeconds={100} seed={7} opacity={0.75} />
+          </Gather>
+          <Gather g={g} from={outward(76, 15)} lag={0.15}>
+            <Planet x="76%" y="15%" size={72} colors={["#FDC27A", "#F2711C"]} ring spinSeconds={70} seed={3} opacity={0.9} />
+          </Gather>
+          <Gather g={g} from={outward(14, 12)} lag={0.25}>
+            <Planet x="14%" y="12%" size={30} colors={["#C4B5FD", "#7C3AED"]} seed={5} opacity={0.8} />
+          </Gather>
+          <Gather g={g} from={outward(90, 47)} lag={0.3}>
+            <Planet x="90%" y="47%" size={24} colors={["#5EEAD4", "#0D9488"]} seed={9} opacity={0.8} />
+          </Gather>
         </>
       )}
 
