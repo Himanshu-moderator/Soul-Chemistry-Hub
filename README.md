@@ -15,12 +15,19 @@
 </div>
 
 <p align="center">
-  <img src="docs/screens/explore.jpg" width="15.5%" alt="Explore" />
-  <img src="docs/screens/chats.jpg" width="15.5%" alt="Chats" />
-  <img src="docs/screens/communities.jpg" width="15.5%" alt="Communities" />
-  <img src="docs/screens/soul.jpg" width="15.5%" alt="Soul" />
-  <img src="docs/screens/profile.jpg" width="15.5%" alt="Profile" />
-  <img src="docs/screens/coins.jpg" width="15.5%" alt="Coins" />
+  <img src="docs/screens/welcome.jpg" width="19%" alt="Welcome" />
+  <img src="docs/screens/explore.jpg" width="19%" alt="Explore" />
+  <img src="docs/screens/chats.jpg" width="19%" alt="Chats" />
+  <img src="docs/screens/room.jpg" width="19%" alt="A community room" />
+  <img src="docs/screens/profile.jpg" width="19%" alt="Profile" />
+</p>
+
+<p align="center">
+  <img src="docs/screens/onboarding.jpg" width="19%" alt="Onboarding" />
+  <img src="docs/screens/communities-join.jpg" width="19%" alt="Pick communities" />
+  <img src="docs/screens/soul.jpg" width="19%" alt="Soul" />
+  <img src="docs/screens/themes.jpg" width="19%" alt="App and chat themes" />
+  <img src="docs/screens/coins.jpg" width="19%" alt="Coins" />
 </p>
 
 > **Try it without signing up.** Tap **Try the demo** on the welcome screen. You get the whole app with sample people and chats, saved on your device only. **Create account** gives you a real profile stored in the backend, and real chat with other members in the communities.
@@ -42,7 +49,7 @@ Personality-type communities (MBTI, Enneagram, Socionics) are large and passiona
 | **Explore** | Search and browse famous personalities with their MBTI and Enneagram, follow them, filter by trending or type, and answer a daily question for coins |
 | **Chats** | A switch at the top flips between your **Chats** and **Communities**. Open a community to talk with its members in real time |
 | **Soul** | Your connections with chemistry scores, discovery modes, and your best chemistry types |
-| **Profile** | Editable name, bio and types, level and streak, badges, an insights chat, and a theme picker |
+| **Profile** | Editable name, bio and types, level and streak, badges, an insights chat, and the app and chat theme pickers |
 | **Coins** | Coin packs, daily rewards that follow your streak, a 14-day free trial and premium perks |
 
 ## Features
@@ -54,11 +61,21 @@ Personality-type communities (MBTI, Enneagram, Socionics) are large and passiona
 - **Type finder**: the chat scores each answer across the four MBTI dimensions; the quiz asks one question per dimension. Fifteen of the sixteen types are reachable from the chat, all sixteen from the quiz or the picker.
 - **Everything follows your type**: Explore tiles, chemistry pairings, the Big Five sketch and the insights chat change with your type.
 - **Server-enforced economy** (accounts): coins, streaks, XP and premium can't be edited from the client. The daily check-in, the trial and (demo) coin packs are database functions.
+- **Themes**: six app themes and three chat themes, saved to your account.
 - **One codebase** for iOS, Android and web, shown as a phone-sized column on desktop.
 
 ### How "AI" works here
 
 The onboarding chat and the PersonaAI insights chat are **scripted**, not a language model: answers are looked up from per-type notes. Swapping in a real model is on the [roadmap](#roadmap). The 1:1 chats with the sample contacts are also scripted; real conversations happen in communities.
+
+## Design
+
+A space theme end to end: a living night sky (twinkling and drifting stars, floating planets, the odd shooting star) behind a clean, borderless UI with soft surfaces, generous spacing and gradient accents.
+
+- **Logo and splash**: a ringed-planet mark ([`docs/BRANDING.md`](docs/BRANDING.md)) and an animated launch screen where the logo blooms out of the star field.
+- **Six app themes**: *Nebula* and *Aurora* are free; *Pulsar*, *Solar Flare*, *Quasar* and *Comet* unlock with Premium. Switching re-colours the whole app instantly.
+- **Three chat themes** that style every conversation and room: *Nebula* (violet haze, starry sky), *Aurora* (calm teal and green) and *Eclipse* (near-black with a golden edge). Pick one from the droplet button in any chat or from Profile → Themes.
+- **A small design system** (`src/components/ui`, `src/theme`): buttons, cards, chips, sheets and text fields that every screen shares, so the look stays consistent.
 
 ## Backend
 
@@ -123,15 +140,19 @@ The `dist/` folder is the site. Add a `.nojekyll` file (Pages ignores `_expo` ot
 ## Project structure
 
 ```
-artifacts/mobile/
-  app/             Screens (Expo Router): welcome, auth, onboarding, community room, five tabs
-  components/      Glass cards, tab bar, badges, rings
-  context/         Auth (sessions, demo mode) and app state (profile, follows, economy)
-  lib/             Backend client, type scoring, compatibility and Big Five helpers
-  data/            Sample people, communities, themes
-supabase/          Database schema
-docs/screens/      Screenshots used in this README
+artifacts/mobile/src/
+  app/          routes only (one tiny file per URL)
+  features/     one folder per screen: welcome, auth, onboarding, explore, chats, community, soul, profile, coins
+  components/   shared pieces: ui, chat, cosmic (sky + splash), brand (logo), navigation
+  theme/        design tokens, app themes, chat themes
+  state/        sign-in state and app data
+  services/     the backend client
+  data/ lib/    sample content and pure helpers
+supabase/       database schema
+docs/           architecture, branding, screenshots
 ```
+
+The full map, plus a "where do I change X?" table, is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Roadmap
 

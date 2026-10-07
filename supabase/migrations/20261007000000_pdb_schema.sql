@@ -14,6 +14,7 @@ create table public.profiles (
   enneagram text check (char_length(enneagram) <= 4),
   socionics text check (char_length(socionics) <= 4),
   selected_theme text not null default 't1',
+  chat_theme text not null default 'nebula' check (chat_theme in ('nebula', 'aurora', 'eclipse')),
   onboarded boolean not null default false,
   -- Economy: only changed by the functions below, never directly by the client.
   coins integer not null default 100 check (coins >= 0),
@@ -37,7 +38,7 @@ create policy "users update their own profile"
 
 -- Clients may only edit these columns; coins, streak, premium etc. go through functions.
 revoke insert, update, delete on public.profiles from anon, authenticated;
-grant update (display_name, username, bio, mbti, enneagram, socionics, selected_theme, onboarded)
+grant update (display_name, username, bio, mbti, enneagram, socionics, selected_theme, chat_theme, onboarded)
   on public.profiles to authenticated;
 
 -- A profile row is created automatically for every new account.
