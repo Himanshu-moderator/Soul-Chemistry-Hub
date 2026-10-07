@@ -18,9 +18,12 @@ export function SkyProvider({ children }: { children: React.ReactNode }) {
   return <SkyContext.Provider value={value}>{children}</SkyContext.Provider>;
 }
 
-// Renders the shared sky. Place it once, behind the navigator.
-export function SkyHost() {
+// Renders the shared sky. Place it once, behind the navigator. `active` is false
+// while the launch splash is covering the screen (the splash draws its own sky, and
+// two skies at once would just slow the launch down).
+export function SkyHost({ active = true }: { active?: boolean }) {
   const ctx = useContext(SkyContext);
+  if (!active) return null;
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <CosmicBackground variant={ctx?.variant ?? "subtle"} />

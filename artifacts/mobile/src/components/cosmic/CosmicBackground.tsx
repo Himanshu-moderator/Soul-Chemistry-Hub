@@ -1,5 +1,5 @@
-import React, { memo, useEffect, useMemo, useRef } from "react";
-import { Animated, Dimensions, Easing, StyleSheet, View } from "react-native";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Dimensions, Easing, StyleSheet, View, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, Ellipse, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -66,7 +66,7 @@ function WebGather({ from, lag, children }: { from: [number, number]; lag: numbe
   const move = useMemo(
     () =>
       keyframes(
-        { "0%": { transform: [{ translateX: from[0] }, { translateY: from[1] }] }, "100%": { transform: [{ translateX: 0 }, { translateY: 0 }] } },
+        { "0%": { transform: `translate(${from[0]}px, ${from[1]}px)` }, "100%": { transform: "translate(0px, 0px)" } },
         { iterations: 1, easing: "cubic-bezier(0.215, 0.61, 0.355, 1)", fill: "backwards" }
       ),
     [from]
@@ -159,10 +159,10 @@ const breathe = IS_WEB ? keyframes({ "0%": { opacity: 0.35 }, "100%": { opacity:
 const flareGlow = IS_WEB
   ? keyframes(
       {
-        "0%": { opacity: 0.15, transform: [{ scale: 0.8 }] },
-        "55%": { opacity: 0.15, transform: [{ scale: 0.8 }] },
-        "72%": { opacity: 1, transform: [{ scale: 1.35 }] },
-        "100%": { opacity: 0.15, transform: [{ scale: 0.8 }] },
+        "0%": { opacity: 0.15, transform: "scale(0.8)" },
+        "55%": { opacity: 0.15, transform: "scale(0.8)" },
+        "72%": { opacity: 1, transform: "scale(1.35)" },
+        "100%": { opacity: 0.15, transform: "scale(0.8)" },
       },
       { easing: "ease-in-out" }
     )
@@ -185,9 +185,9 @@ function WebBigStar({ spec, k }: { spec: StarSpec; k: number }) {
   );
 }
 
-const WebStars = memo(function WebStars({ variant, g }: { variant: SkyVariant; g?: Animated.Value }) {
+const WebStars = memo(function WebStars({ g }: { g?: Animated.Value }) {
   const specs = useMemo(makeStars, []);
-  const k = STAR_BRIGHTNESS[variant];
+  const k = 1; // the whole star layer is dimmed instead (see <Layer>)
   return (
     <>
       {specs.map((s) => {
@@ -279,10 +279,10 @@ function BigStar({ spec, k }: { spec: StarSpec; k: number }) {
   );
 }
 
-const NativeStars = memo(function NativeStars({ variant, g }: { variant: SkyVariant; g?: Animated.Value }) {
+const NativeStars = memo(function NativeStars({ g }: { g?: Animated.Value }) {
   const specs = useMemo(makeStars, []);
   const loops = [useBreath(BREATH[0].ms, BREATH[0].delay), useBreath(BREATH[1].ms, BREATH[1].delay), useBreath(BREATH[2].ms, BREATH[2].delay), useBreath(BREATH[3].ms, BREATH[3].delay)];
-  const k = STAR_BRIGHTNESS[variant];
+  const k = 1; // the whole star layer is dimmed instead (see <Layer>)
 
   return (
     <>
@@ -362,7 +362,7 @@ function WebFallingStar({ top, delay, duration, brightness }: { top: string; del
     const at = (f: number) => `${(start + (end - start) * f).toFixed(2)}%`;
     const pose = (f: number, opacity: number) => ({
       opacity,
-      transform: [{ translateX: -dx * f }, { translateY: dy * f }, { rotate: `${180 - FALL_DEG}deg` }],
+      transform: `translate(${-dx * f}px, ${dy * f}px) rotate(${180 - FALL_DEG}deg)`,
     });
     return keyframes({
       "0%": pose(0, 0),
@@ -427,14 +427,14 @@ function Planet({
 
   // On the web the spin is a CSS animation of the surface strip (see motion.ts).
   const spinFx = useMemo(
-    () => (IS_WEB && spinSeconds ? [keyframes({ "0%": { transform: [{ translateX: 0 }] }, "100%": { transform: [{ translateX: -size }] } }), timing(spinSeconds * 1000)] : null),
+    () => (IS_WEB && spinSeconds ? [keyframes({ "0%": { transform: "translateX(0px)" }, "100%": { transform: `translateX(${-size}px)` } }), timing(spinSeconds * 1000)] : null),
     [size, spinSeconds]
   );
 
   const surface = useMemo(() => {
     const rand = seeded(seed);
-    const bands = Array.from({ length: 6 }, (_, i) => ({ y: ((i + 0.3 + rand() * 0.4) / 6) * size, h: size * (0.05 + rand() * 0.07), light: rand() > 0.5 }));
-    const spots = Array.from({ length: 4 }, () => ({ x: rand() * size, y: size * (0.2 + rand() * 0.6), rx: size * (0.08 + rand() * 0.1), ry: size * (0.03 + rand() * 0.04) }));
+    const bands = Array.from({ length: 4 }, (_, i) => ({ y: ((i + 0.3 + rand() * 0.4) / 4) * size, h: size * (0.05 + rand() * 0.07), light: rand() > 0.5 }));
+    const spots = Array.from({ length: 3 }, () => ({ x: rand() * size, y: size * (0.2 + rand() * 0.6), rx: size * (0.08 + rand() * 0.1), ry: size * (0.03 + rand() * 0.04) }));
     return { bands, spots };
   }, [seed, size]);
 
@@ -458,7 +458,7 @@ function Planet({
 
   return (
     <View pointerEvents="none" style={{ position: "absolute", left: x, top: y, width: 0, height: 0, opacity }}>
-      <Glow color={colors[0]} alpha={0.2} size={size * 2.1} style={{ left: -size * 1.05, top: -size * 1.05 }} />
+      {size >= 70 && <Glow color={colors[0]} alpha={0.2} size={size * 2.1} style={{ left: -size * 1.05, top: -size * 1.05 }} />}
       {ring && ringHalf(false)}
       <View style={{ position: "absolute", left: -size / 2, top: -size / 2, width: size, height: size, borderRadius: size / 2, overflow: "hidden" }}>
         <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -514,6 +514,17 @@ const Glow = memo(function Glow({ color, alpha, size, style }: { color: string; 
   );
 });
 
+// A full-size layer with one opacity. Fading a whole layer is far cheaper than
+// re-rendering what is inside it, and (on the web) the browser animates the change.
+const fadeStyle = IS_WEB ? ({ transitionProperty: "opacity", transitionDuration: "600ms" } as ViewStyle) : undefined;
+function Layer({ level, children }: { level: number; children: React.ReactNode }) {
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: level }, fadeStyle]}>
+      {children}
+    </View>
+  );
+}
+
 interface Props {
   variant?: SkyVariant;
   // Override the sky colours (used by chat themes). Defaults to the app theme.
@@ -531,7 +542,19 @@ export function CosmicBackground({ variant = "subtle", sky, glow, noStars, gathe
   const { colors } = useTheme();
   const lively = variant !== "subtle";
   const falling = FALLING_COUNT[variant];
-  const k = STAR_BRIGHTNESS[variant];
+  const level = STAR_BRIGHTNESS[variant];
+
+  // The planets stay mounted for a moment after you leave the welcome screen and fade
+  // out with it, so removing them never happens in the middle of a page transition.
+  const [planetsMounted, setPlanetsMounted] = useState(variant === "full");
+  useEffect(() => {
+    if (variant === "full") {
+      setPlanetsMounted(true);
+      return;
+    }
+    const t = setTimeout(() => setPlanetsMounted(false), 1200);
+    return () => clearTimeout(t);
+  }, [variant]);
 
   const g = useMemo(() => (gather ? new Animated.Value(0) : undefined), [gather]);
   useEffect(() => {
@@ -547,15 +570,15 @@ export function CosmicBackground({ variant = "subtle", sky, glow, noStars, gathe
       <Glow color={glow ?? colors.accentAlt} alpha={lively ? 0.2 : 0.08} size={520} style={{ bottom: -240, left: -220 }} />
 
       {!noStars && (
-        <>
-          <Stars variant={variant} g={g} />
-          {falling >= 1 && <FallingStar top="7%" delay={3500} duration={8000} brightness={k} />}
-          {falling >= 2 && <FallingStar top="26%" delay={10000} duration={9000} brightness={k} />}
-        </>
+        <Layer level={level}>
+          <Stars g={g} />
+          {falling >= 1 && <FallingStar top="7%" delay={3500} duration={8000} brightness={1} />}
+          {falling >= 2 && <FallingStar top="26%" delay={10000} duration={9000} brightness={1} />}
+        </Layer>
       )}
 
-      {variant === "full" && (
-        <>
+      {planetsMounted && (
+        <Layer level={variant === "full" ? 1 : 0}>
           {/* Four planets, well apart. The big blue one and the ringed orange one spin slowly. */}
           <Gather g={g} from={outward(-6, 64)} lag={0.05}>
             <Planet x="-6%" y="64%" size={180} colors={["#38BDF8", "#4F46E5"]} spinSeconds={100} seed={7} opacity={0.75} />
@@ -569,7 +592,7 @@ export function CosmicBackground({ variant = "subtle", sky, glow, noStars, gathe
           <Gather g={g} from={outward(90, 47)} lag={0.3}>
             <Planet x="90%" y="47%" size={24} colors={["#5EEAD4", "#0D9488"]} seed={9} opacity={0.8} />
           </Gather>
-        </>
+        </Layer>
       )}
 
       {children}
