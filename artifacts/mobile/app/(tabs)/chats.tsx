@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   Animated,
   FlatList,
@@ -15,7 +15,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { COLORS } from "@/constants/colors";
+import { router } from "expo-router";
 import { CONNECTIONS, COMMUNITIES } from "@/data/mockData";
+import { supabase } from "@/lib/supabase";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { TypeBadge } from "@/components/TypeBadge";
 import { GlassCard } from "@/components/GlassCard";
@@ -54,15 +56,51 @@ const MENU_OPTIONS = [
 // Mock chat conversation
 const MOCK_CONVERSATION = [
   { id: "msg1", from: "them", text: "Hey! I saw your type analysis post, really insightful 👏", time: "2:30 PM" },
-  { id: "msg2", from: "me", text: "Thank you! INTJs tend to over-analyze everything lol", time: "2:31 PM" },
-  { id: "msg3", from: "them", text: "Same as INFJ 😄 Do you think we're compatible?", time: "2:32 PM" },
-  { id: "msg4", from: "me", text: "According to soul chemistry, INFJs are actually one of our best matches!", time: "2:33 PM" },
+  { id: "msg2", from: "me", text: "Thank you! Type nerds tend to over-analyze everything lol", time: "2:31 PM" },
+  { id: "msg3", from: "them", text: "Same here 😄 Do you think we're compatible?", time: "2:32 PM" },
+  { id: "msg4", from: "me", text: "According to soul chemistry, we're actually a great match!", time: "2:33 PM" },
   { id: "msg5", from: "them", text: "That's so cool, I love this app 🔮", time: "2:34 PM" },
 ];
 
 export default function ChatsScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, joinedCommunities, toggleCommunity } = useApp();
+  const { mode, profile, joinedCommunities, toggleCommunity } = useApp();
+
+  // Sample contacts: messages you send get a friendly scripted answer.
+  type DM = { id: string; from: "me" | "them"; text: string; time: string };
+  const [dmSent, setDmSent] = useState<Record<string, DM[]>>({});
+  const [dmTyping, setDmTyping] = useState<string | null>(null);
+  const REPLIES = ["Haha, I was thinking the same thing 😄", "Tell me more!", "That's a great point.", "Ha, fair enough 🙌", "Love that. Talk soon!"];
+  const sendDm = (contactId: string, body: string) => {
+    const now = () => new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const mine: DM = { id: `me-${Date.now()}`, from: "me", text: body, time: now() };
+    setDmSent((cur) => ({ ...cur, [contactId]: [...(cur[contactId] ?? []), mine] }));
+    setDmTyping(contactId);
+    setTimeout(() => {
+      const reply: DM = {
+        id: `them-${Date.now()}`,
+        from: "them",
+        text: REPLIES[Math.floor(Math.random() * REPLIES.length)],
+        time: now(),
+      };
+      setDmSent((cur) => ({ ...cur, [contactId]: [...(cur[contactId] ?? []), reply] }));
+      setDmTyping((t) => (t === contactId ? null : t));
+    }, 1300);
+  };
+
+  // Real member counts for accounts; the demo shows sample numbers.
+  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (mode !== "account" || !supabase) return;
+    void supabase
+      .from("community_stats")
+      .select("community_id, members")
+      .then(({ data }) => {
+        const map: Record<string, number> = {};
+        (data ?? []).forEach((r: { community_id: string; members: number }) => (map[r.community_id] = r.members));
+        setMemberCounts(map);
+      });
+  }, [mode, joinedCommunities]);
   const [section, setSection] = useState<Section>("chats");
   const [search, setSearch] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
@@ -235,7 +273,7 @@ export default function ChatsScreen() {
           renderItem={({ item }) => {
             const isJoined = joinedCommunities.includes(item.id);
             return (
-              <Pressable onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
+              <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/community/${item.id}` as never); }}>
                 <GlassCard style={styles.communityCard}>
                   <View style={[styles.colorBar, { backgroundColor: item.color }]} />
                   <View style={styles.commContent}>
@@ -251,7 +289,7 @@ export default function ChatsScreen() {
                     <View style={styles.commBottom}>
                       <View style={styles.commStats}>
                         <Ionicons name="people" size={12} color={COLORS.textTertiary} />
-                        <Text style={styles.commStatText}>{item.members.toLocaleString()}</Text>
+                        <Text style={styles.commStatText}>{(mode === "account" ? memberCounts[item.id] ?? 0 : item.members).toLocaleString()}</Text>
                         <Ionicons name="time" size={12} color={COLORS.textTertiary} />
                         <Text style={styles.commStatText}>{item.recentActivity}</Text>
                       </View>
@@ -316,7 +354,7 @@ export default function ChatsScreen() {
 
             {/* Messages */}
             <ScrollView style={styles.messagesList} contentContainerStyle={{ padding: 16, gap: 10 }}>
-              {MOCK_CONVERSATION.map((msg) => (
+              {[...MOCK_CONVERSATION, ...(dmSent[chatOpen.id] ?? [])].map((msg) => (
                 <View key={msg.id} style={[styles.msgRow, msg.from === "me" && styles.msgRowMe]}>
                   {msg.from !== "me" && (
                     <AvatarCircle name={chatOpen.user.name} size={28} mbti={chatOpen.user.mbti} />
@@ -327,15 +365,17 @@ export default function ChatsScreen() {
                   </View>
                 </View>
               ))}
-              {/* Type indicator */}
-              <View style={styles.typingRow}>
-                <AvatarCircle name={chatOpen.user.name} size={24} mbti={chatOpen.user.mbti} />
-                <View style={styles.typingBubble}>
-                  <View style={styles.typingDot} />
-                  <View style={[styles.typingDot, { opacity: 0.6 }]} />
-                  <View style={[styles.typingDot, { opacity: 0.3 }]} />
+              {/* Typing indicator, only while a reply is on its way */}
+              {dmTyping === chatOpen.id && (
+                <View style={styles.typingRow}>
+                  <AvatarCircle name={chatOpen.user.name} size={24} mbti={chatOpen.user.mbti} />
+                  <View style={styles.typingBubble}>
+                    <View style={styles.typingDot} />
+                    <View style={[styles.typingDot, { opacity: 0.6 }]} />
+                    <View style={[styles.typingDot, { opacity: 0.3 }]} />
+                  </View>
                 </View>
-              </View>
+              )}
             </ScrollView>
 
             {/* Input bar */}
@@ -357,7 +397,7 @@ export default function ChatsScreen() {
               {message.length > 0 ? (
                 <TouchableOpacity
                   style={styles.sendBtn}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setMessage(""); }}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); if (chatOpen) sendDm(chatOpen.id, message.trim()); setMessage(""); }}
                 >
                   <Ionicons name="send" size={18} color="#FFF" />
                 </TouchableOpacity>

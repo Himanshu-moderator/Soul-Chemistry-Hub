@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import { COLORS } from "@/constants/colors";
 import { CONNECTIONS, PERSONALITY_TYPES, THEMES } from "@/data/mockData";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { bigFiveFor } from "@/lib/personality";
 import { GlassCard } from "@/components/GlassCard";
 import { TypeBadge } from "@/components/TypeBadge";
@@ -70,7 +71,8 @@ function aiReply(mbti: string, query: string): string {
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, updateProfile, coins, isPremium, selectedTheme, setSelectedTheme, resetApp } = useApp();
+  const { profile, updateProfile, coins, isPremium, selectedTheme, setSelectedTheme, resetDemo, mode } = useApp();
+  const { signOut } = useAuth();
 
   const [activeSection, setActiveSection] = useState<"profile" | "ai" | "themes">("profile");
   const [editVisible, setEditVisible] = useState(false);
@@ -288,17 +290,20 @@ export default function ProfileScreen() {
             </GlassCard>
           </TouchableOpacity>
 
-          {/* Everything here is saved on this device only, so offer a clean slate */}
+          {/* Leave: end the demo (and clear it) or sign out of the account */}
           <TouchableOpacity
             accessibilityRole="button"
             onPress={async () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              await resetApp();
+              if (mode === "demo") await resetDemo();
+              await signOut();
               router.replace("/");
             }}
             style={{ alignSelf: "center", paddingVertical: 14, paddingHorizontal: 18 }}
           >
-            <Text style={{ color: COLORS.textTertiary, fontSize: 13 }}>Reset demo and start over</Text>
+            <Text style={{ color: COLORS.textTertiary, fontSize: 13 }}>
+              {mode === "demo" ? "Exit demo and clear its data" : "Sign out"}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       )}
@@ -424,7 +429,7 @@ export default function ProfileScreen() {
         <ScrollView contentContainerStyle={[styles.themesContent, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
           <View style={styles.themesHeader}>
             <Text style={styles.themesTitle}>Choose Your Theme</Text>
-            <Text style={styles.themesSub}>Personalize your PersonaDB experience</Text>
+            <Text style={styles.themesSub}>Personalize your Pdb experience</Text>
           </View>
 
           {THEMES.map((theme) => {

@@ -31,7 +31,7 @@ const featureCards = (mbti: string) => [
 
 export default function PersonalitiesScreen() {
   const insets = useSafeAreaInsets();
-  const { followedPeople, toggleFollow, coins, addCoins, dailyCheckinDone, setDailyCheckinDone, profile } = useApp();
+  const { followedPeople, toggleFollow, coins, claimCheckin, dailyCheckinDone, profile } = useApp();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [checkinVisible, setCheckinVisible] = useState(false);
@@ -54,8 +54,7 @@ export default function PersonalitiesScreen() {
     setShowResult(true);
     if (idx === q.correct) {
       setTimeout(() => {
-        addCoins(q.coins);
-        setDailyCheckinDone(true);
+        void claimCheckin(q.coins);
         setCheckinVisible(false);
       }, 1600);
     }

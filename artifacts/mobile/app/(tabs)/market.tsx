@@ -25,11 +25,11 @@ const COIN_PACKS = [
   { id: "p5", coins: 5500, price: "₹2,050.00", free: false, tag: null, label: null },
 ];
 
+// A three-day reward cycle that follows your real check-in streak.
 const DAILY_REWARDS = [
-  { day: 1, coins: 25, claimed: true, available: false },
-  { day: 2, coins: 30, claimed: true, available: false },
-  { day: 3, coins: 50, claimed: false, available: true, countdown: "21:19:38" },
-  { day: 4, coins: 90, claimed: false, available: false, note: "day 7" },
+  { day: 1, coins: 5 },
+  { day: 2, coins: 7 },
+  { day: 3, coins: 10 },
 ];
 
 const PREMIUM_PERKS = [
@@ -43,7 +43,9 @@ const PREMIUM_PERKS = [
 
 export default function MarketScreen() {
   const insets = useSafeAreaInsets();
-  const { coins, isPremium, setIsPremium } = useApp();
+  const { coins, isPremium, startTrial, buyCoins, profile, dailyCheckinDone } = useApp();
+  const cycleDone = profile.streak === 0 ? 0 : ((profile.streak - 1) % 3) + 1;
+  const [buying, setBuying] = useState(false);
   const [trialVisible, setTrialVisible] = useState(false);
   const [openFriends, setOpenFriends] = useState(true);
   const [purchaseId, setPurchaseId] = useState<string | null>(null);
@@ -51,6 +53,7 @@ export default function MarketScreen() {
   const handlePackPress = (pack: typeof COIN_PACKS[0]) => {
     if (pack.free) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void buyCoins(pack.coins);
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -119,7 +122,10 @@ export default function MarketScreen() {
         {/* Free Daily Rewards */}
         <Text style={styles.sectionTitle}>Free Daily Rewards</Text>
         <View style={styles.dailyRow}>
-          {DAILY_REWARDS.map((reward) => (
+          {DAILY_REWARDS.map((base) => {
+            const available = !dailyCheckinDone && base.day === (cycleDone % 3) + 1;
+            const reward = { ...base, available, claimed: base.day <= cycleDone && !available };
+            return (
             <View
               key={reward.day}
               style={[
@@ -135,13 +141,11 @@ export default function MarketScreen() {
                 <Text style={styles.dailyCoins}>{reward.coins}</Text>
               </View>
               {reward.claimed && <Ionicons name="checkmark" size={16} color={COLORS.accentGreen} style={{ marginTop: 4 }} />}
-              {reward.countdown && (
-                <Text style={styles.dailyCountdown}>{reward.countdown}</Text>
-              )}
-              {reward.note && <Text style={styles.dailyNote}>{reward.note}</Text>}
-              {!reward.claimed && !reward.countdown && !reward.note && <View style={{ height: 20 }} />}
+              {reward.available && <Text style={styles.dailyNote}>Today</Text>}
+              {!reward.claimed && !reward.available && <View style={{ height: 20 }} />}
             </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Premium Perks comparison */}
@@ -226,7 +230,7 @@ export default function MarketScreen() {
             </View>
             <TouchableOpacity style={styles.startBtn} onPress={() => {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              setIsPremium(true);
+              void startTrial();
               setTrialVisible(false);
             }}>
               <Text style={styles.startBtnText}>Start Free Trial</Text>
@@ -254,12 +258,22 @@ export default function MarketScreen() {
                     <Text style={styles.purchaseCoins}>{p.coins.toLocaleString()} Coins</Text>
                     <Text style={styles.purchasePrice}>{p.price}</Text>
                   </View>
-                  <TouchableOpacity style={styles.confirmBtn} onPress={() => {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    setPurchaseId(null);
-                  }}>
-                    <Text style={styles.confirmBtnText}>Buy Now</Text>
+                  <TouchableOpacity
+                    style={[styles.confirmBtn, buying && { opacity: 0.6 }]}
+                    disabled={buying}
+                    onPress={async () => {
+                      setBuying(true);
+                      await buyCoins(p.coins);
+                      setBuying(false);
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      setPurchaseId(null);
+                    }}
+                  >
+                    <Text style={styles.confirmBtnText}>{buying ? "Adding..." : "Get coins (demo)"}</Text>
                   </TouchableOpacity>
+                  <Text style={{ color: COLORS.textTertiary, fontSize: 12, textAlign: "center" }}>
+                    Prototype: no real payment is taken.
+                  </Text>
                 </>
               );
             })()}

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   FlatList,
@@ -18,13 +19,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { COLORS } from "@/constants/colors";
-import { PERSONALITY_TYPES } from "@/data/mockData";
+import { COMMUNITIES, PERSONALITY_TYPES } from "@/data/mockData";
 import { useApp } from "@/context/AppContext";
 import { COMPATIBLE_TYPES, typeFromAnswers } from "@/lib/personality";
 
 const { width } = Dimensions.get("window");
 
-type Step = "welcome" | "ai-chat" | "type-grid" | "quiz" | "complete";
+type Step = "basics" | "welcome" | "ai-chat" | "type-grid" | "quiz" | "communities" | "complete";
 
 const TYPE_ROWS = [
   ["INTJ", "INTP", "ENTJ", "ENTP"],
@@ -86,8 +87,31 @@ const AI_FLOW: AiMsg[] = [
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
-  const { updateProfile, setOnboarded } = useApp();
-  const [step, setStep] = useState<Step>("welcome");
+  const { hydrated, profile, saveProfile, updateProfile, isUsernameFree, joinedCommunities, toggleCommunity, setOnboarded } = useApp();
+  const [step, setStep] = useState<Step>("basics");
+
+  // Profile basics
+  const [name, setName] = useState(profile.name === "Alex Rivera" ? "" : profile.name);
+  const [username, setUsername] = useState(
+    profile.username && profile.username !== "@new_member" && profile.username !== "@alex_rivera"
+      ? profile.username.replace(/^@/, "")
+      : ""
+  );
+  const [bio, setBio] = useState("");
+
+  // This screen can mount before saved data finishes loading (e.g. after a reload): fill the blanks once it has.
+  useEffect(() => {
+    if (!hydrated) return;
+    setName((n) => n || (profile.name === "Alex Rivera" ? "" : profile.name));
+    setUsername((u) =>
+      u || (profile.username && profile.username !== "@new_member" && profile.username !== "@alex_rivera" ? profile.username.replace(/^@/, "") : "")
+    );
+  }, [hydrated, profile.name, profile.username]);
+  const [basicsError, setBasicsError] = useState<string | null>(null);
+  const [basicsBusy, setBasicsBusy] = useState(false);
+
+  // Communities to join
+  const [picked, setPicked] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState("");
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
@@ -132,7 +156,7 @@ export default function OnboardingScreen() {
             const computed = typeFromAnswers(newChoices[1] ?? 0, newChoices[2] ?? 0, newChoices[3] ?? 0);
             setSelectedType(computed);
             updateProfile({ mbti: computed } as any);
-            setTimeout(() => { setStep("complete"); animateProgress(1); }, 1800);
+            setTimeout(() => { setStep("communities"); animateProgress(1); }, 1800);
           }, 1200);
         }
       }
@@ -149,7 +173,7 @@ export default function OnboardingScreen() {
     if (!selectedType) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     updateProfile({ mbti: selectedType } as any);
-    setStep("complete");
+    setStep("communities");
     animateProgress(1);
   };
 
@@ -164,11 +188,56 @@ export default function OnboardingScreen() {
       const type = `${newAnswers[0] || "I"}${newAnswers[1] || "N"}${newAnswers[2] || "T"}${newAnswers[3] || "J"}`;
       setSelectedType(type);
       updateProfile({ mbti: type } as any);
-      setTimeout(() => { setStep("complete"); animateProgress(1); }, 400);
+      setTimeout(() => { setStep("communities"); animateProgress(1); }, 400);
     }
   };
 
   const typeData = PERSONALITY_TYPES.find((t) => t.code === selectedType);
+
+  const submitBasics = async () => {
+    setBasicsError(null);
+    const cleanName = name.trim();
+    const cleanUser = username.replace(/^@/, "").trim().toLowerCase();
+    if (!cleanName) return setBasicsError("Tell us what to call you.");
+    if (!/^[a-z0-9_]{3,20}$/.test(cleanUser))
+      return setBasicsError("Usernames are 3 to 20 characters: letters, numbers or underscores.");
+    setBasicsBusy(true);
+    try {
+      if (!(await isUsernameFree(cleanUser))) return setBasicsError("That username is already taken.");
+      const r = await saveProfile({ name: cleanName, username: "@" + cleanUser, bio: bio.trim() });
+      if (!r.ok) return setBasicsError(r.error);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setStep("welcome");
+      animateProgress(0.1);
+    } finally {
+      setBasicsBusy(false);
+    }
+  };
+
+  // Entering the communities step: suggest the community for your own type.
+  useEffect(() => {
+    if (step !== "communities") return;
+    const own = COMMUNITIES.find((c) => c.code === selectedType)?.id;
+    setPicked((cur) => {
+      const base = cur.length ? cur : joinedCommunities;
+      return own && !base.includes(own) ? [...base, own] : base;
+    });
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const togglePicked = (id: string) => {
+    Haptics.selectionAsync();
+    setPicked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  };
+
+  const finishCommunities = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    COMMUNITIES.forEach((c) => {
+      const want = picked.includes(c.id);
+      if (want !== joinedCommunities.includes(c.id)) toggleCommunity(c.id);
+    });
+    setStep("complete");
+    animateProgress(1);
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -177,14 +246,69 @@ export default function OnboardingScreen() {
         <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
       </View>
 
+      {/* Basics step */}
+      {step === "basics" && (
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: insets.bottom + 24, gap: 14 }}
+        >
+          <Text style={[styles.welcomeEmoji, { textAlign: "center" }]}>👋</Text>
+          <Text style={styles.welcomeTitle}>Let's set up your profile</Text>
+          <Text style={styles.welcomeSub}>This is how other people will see you.</Text>
+
+          <Text style={styles.fieldLabel}>Your name</Text>
+          <TextInput
+            style={styles.fieldInput}
+            value={name}
+            onChangeText={setName}
+            placeholder="Alex Rivera"
+            placeholderTextColor={COLORS.textTertiary}
+            maxLength={40}
+            autoCapitalize="words"
+          />
+
+          <Text style={styles.fieldLabel}>Username</Text>
+          <View style={styles.usernameRow}>
+            <Text style={styles.at}>@</Text>
+            <TextInput
+              style={[styles.fieldInput, { flex: 1, paddingLeft: 30 }]}
+              value={username}
+              onChangeText={(t) => setUsername(t.replace(/[^a-zA-Z0-9_]/g, ""))}
+              placeholder="alex_rivera"
+              placeholderTextColor={COLORS.textTertiary}
+              maxLength={20}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          <Text style={styles.fieldLabel}>Bio (optional)</Text>
+          <TextInput
+            style={[styles.fieldInput, { height: 90, textAlignVertical: "top" }]}
+            value={bio}
+            onChangeText={setBio}
+            placeholder="A line or two about you"
+            placeholderTextColor={COLORS.textTertiary}
+            maxLength={160}
+            multiline
+          />
+
+          {basicsError && <Text style={styles.fieldError}>{basicsError}</Text>}
+
+          <TouchableOpacity style={[styles.enterBtn, basicsBusy && { opacity: 0.6 }]} onPress={submitBasics} disabled={basicsBusy}>
+            {basicsBusy ? <ActivityIndicator color="#FFF" /> : <Text style={styles.enterBtnText}>Continue</Text>}
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+
       {/* Welcome step */}
       {step === "welcome" && (
         <View style={[styles.stepContainer, styles.welcomeStep, { paddingBottom: insets.bottom + 24 }]}>
           <View style={styles.welcomeIconWrap}>
             <Text style={styles.welcomeEmoji}>🔮</Text>
           </View>
-          <Text style={styles.welcomeTitle}>Welcome to PersonaDB</Text>
-          <Text style={styles.welcomeSub}>The #1 personality database & social app. Let's discover who you are.</Text>
+          <Text style={styles.welcomeTitle}>Find your type</Text>
+          <Text style={styles.welcomeSub}>Chat with PersonaAI or take a quick quiz. It takes about two minutes.</Text>
 
           <View style={styles.welcomeOptions}>
             <TouchableOpacity
@@ -377,6 +501,41 @@ export default function OnboardingScreen() {
         </View>
       )}
 
+      {/* Communities step */}
+      {step === "communities" && (
+        <View style={[styles.stepContainer, { paddingBottom: insets.bottom + 16 }]}>
+          <Text style={[styles.welcomeTitle, { marginTop: 24 }]}>Join your people</Text>
+          <Text style={[styles.welcomeSub, { marginBottom: 12 }]}>
+            Pick a few communities. You can change this any time.
+          </Text>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 12 }}>
+            {COMMUNITIES.map((c) => {
+              const on = picked.includes(c.id);
+              return (
+                <TouchableOpacity
+                  key={c.id}
+                  onPress={() => togglePicked(c.id)}
+                  activeOpacity={0.8}
+                  style={[styles.commRow, on && { borderColor: c.color, backgroundColor: c.color + "18" }]}
+                >
+                  <View style={[styles.commBadge, { backgroundColor: c.color + "25", borderColor: c.color + "60" }]}>
+                    <Text style={{ color: c.color, fontFamily: "Inter_700Bold", fontSize: 11 }}>{c.code}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.commRowName}>{c.name}</Text>
+                    <Text style={styles.commRowDesc} numberOfLines={1}>{c.description}</Text>
+                  </View>
+                  <Feather name={on ? "check-circle" : "circle"} size={22} color={on ? c.color : COLORS.textTertiary} />
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <TouchableOpacity style={styles.enterBtn} onPress={finishCommunities}>
+            <Text style={styles.enterBtnText}>{picked.length ? `Join ${picked.length} & continue` : "Skip for now"}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Complete step */}
       {step === "complete" && (
         <View style={[styles.stepContainer, styles.completeStep, { paddingBottom: insets.bottom + 24 }]}>
@@ -409,7 +568,7 @@ export default function OnboardingScreen() {
               router.replace("/(tabs)");
             }}
           >
-            <Text style={styles.enterBtnText}>Enter PersonaDB</Text>
+            <Text style={styles.enterBtnText}>Enter Pdb</Text>
             <Feather name="arrow-right" size={18} color="#FFF" />
           </TouchableOpacity>
         </View>
@@ -419,6 +578,34 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
+  fieldLabel: { color: COLORS.textSecondary, fontFamily: "Inter_600SemiBold", fontSize: 13, marginBottom: -6 },
+  fieldInput: {
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 1,
+    borderColor: COLORS.glassBorder,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: COLORS.textPrimary,
+    fontFamily: "Inter_400Regular",
+    fontSize: 16,
+  },
+  usernameRow: { justifyContent: "center" },
+  at: { position: "absolute", left: 16, zIndex: 1, color: COLORS.textSecondary, fontSize: 16 },
+  fieldError: { color: COLORS.accentRed, fontFamily: "Inter_400Regular", fontSize: 14 },
+  commRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.glassBorder,
+    backgroundColor: COLORS.bgCard,
+  },
+  commBadge: { width: 52, height: 40, borderRadius: 10, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  commRowName: { color: COLORS.textPrimary, fontFamily: "Inter_600SemiBold", fontSize: 15 },
+  commRowDesc: { color: COLORS.textSecondary, fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
   container: { flex: 1, backgroundColor: COLORS.bg },
   progressBg: { height: 3, backgroundColor: "rgba(255,255,255,0.1)", marginHorizontal: 20, marginTop: 8, borderRadius: 2 },
   progressFill: { height: 3, backgroundColor: COLORS.accentGreen, borderRadius: 2 },

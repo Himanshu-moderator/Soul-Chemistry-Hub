@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { COLORS } from "@/constants/colors";
-import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -55,8 +55,7 @@ const STARS = Array.from({ length: 80 }, (_, i) => ({
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
-  const { profile } = useApp();
-  const fadeIn = useRef(new Animated.Value(0)).current;
+    const fadeIn = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(40)).current;
   const orb1Scale = useRef(new Animated.Value(1)).current;
   const orb2Scale = useRef(new Animated.Value(1)).current;
@@ -81,15 +80,16 @@ export default function AuthScreen() {
     ).start();
   }, []);
 
-  // Returning visitors skip the splash and onboarding.
-  const { hydrated, onboarded } = useApp();
-  useEffect(() => {
-    if (hydrated && onboarded) router.replace("/(tabs)");
-  }, [hydrated, onboarded]);
+  const { backendConfigured, startDemo } = useAuth();
 
-  const handleStart = () => {
+  const goAuth = (mode: "signup" | "signin") => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace("/onboarding");
+    router.push({ pathname: "/auth", params: { mode } } as never);
+  };
+
+  const tryDemo = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await startDemo();
   };
 
   return (
@@ -121,16 +121,32 @@ export default function AuthScreen() {
 
       {/* Bottom section */}
       <Animated.View style={[styles.bottomSection, { opacity: fadeIn, transform: [{ translateY: slideUp }], paddingBottom: insets.bottom + 24 }]}>
-        {/* Start */}
-        <TouchableOpacity style={styles.googleBtn} onPress={handleStart} activeOpacity={0.85}>
-          <Text style={styles.googleBtnText}>Get started</Text>
-          <Feather name="arrow-right" size={18} color="#FFF" style={{ marginLeft: 8 }} />
+        <Text style={styles.tagline}>Find your type.{"\n"}Find your people.</Text>
+
+        {backendConfigured && (
+          <>
+            <TouchableOpacity style={styles.primaryBtn} onPress={() => goAuth("signup")} activeOpacity={0.85}>
+              <Text style={styles.primaryBtnText}>Create account</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.googleBtn} onPress={() => goAuth("signin")} activeOpacity={0.85}>
+              <Text style={styles.googleBtnText}>I already have an account</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        <TouchableOpacity
+          style={backendConfigured ? styles.demoLink : styles.primaryBtn}
+          onPress={tryDemo}
+          activeOpacity={0.85}
+        >
+          <Feather name="play-circle" size={backendConfigured ? 16 : 20} color={backendConfigured ? COLORS.accent : "#FFF"} />
+          <Text style={backendConfigured ? styles.demoLinkText : styles.primaryBtnText}>Try the demo</Text>
         </TouchableOpacity>
 
-        {/* Honest note: this is a prototype with no accounts */}
         <Text style={styles.termsText}>
-          Prototype · no account needed{"\n"}
-          Everything you do stays on this device
+          {backendConfigured
+            ? "The demo needs no account: sample people and chats, saved on this device."
+            : "Sample people and chats, saved on this device. No account needed."}
         </Text>
       </Animated.View>
     </View>
@@ -239,6 +255,20 @@ const styles = StyleSheet.create({
     gap: 14,
     alignItems: "center",
   },
+  tagline: { color: "#E8E8F0", fontSize: 26, fontWeight: "700", textAlign: "center", lineHeight: 34, marginBottom: 20 },
+  primaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#7C4DFF",
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignSelf: "stretch",
+  },
+  primaryBtnText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  demoLink: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12 },
+  demoLinkText: { color: "#B39DFF", fontSize: 15, fontWeight: "600" },
   googleBtn: {
     flexDirection: "row",
     alignItems: "center",

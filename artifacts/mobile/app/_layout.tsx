@@ -6,17 +6,18 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { Platform, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AppProvider } from "@/context/AppContext";
+import { AppProvider, useApp } from "@/context/AppContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -46,13 +47,76 @@ function WebFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Sends people where they belong: signed-out visitors to the welcome screen,
+// new members to onboarding, everyone else into the app.
+function RouteGate() {
+  const { ready, mode, signOut } = useAuth();
+  const { hydrated, onboarded, loadError, retryLoad } = useApp();
+  const segments = useSegments();
+  const router = useRouter();
+  const first = segments[0] as string | undefined;
+
+  useEffect(() => {
+    if (!ready) return;
+    if (mode === "none") {
+      if (first !== undefined && first !== "auth") router.replace("/");
+      return;
+    }
+    if (!hydrated || loadError) return;
+    if (!onboarded) {
+      if (first !== "onboarding") router.replace("/onboarding");
+    } else if (first === undefined || first === "auth" || first === "onboarding") {
+      router.replace("/(tabs)");
+    }
+  }, [ready, mode, hydrated, onboarded, loadError, first, router]);
+
+  const loading = !ready || (mode !== "none" && !hydrated);
+  if (!loading && !loadError) return null;
+  return (
+    <View
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "#000",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 32,
+        gap: 16,
+      }}
+    >
+      {loadError ? (
+        <>
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>Couldn't load your profile</Text>
+          <Text style={{ color: "#8A8A99", textAlign: "center" }}>{loadError}</Text>
+          <Pressable onPress={retryLoad} style={{ backgroundColor: "#7C4DFF", paddingVertical: 12, paddingHorizontal: 28, borderRadius: 14 }}>
+            <Text style={{ color: "#fff", fontWeight: "600" }}>Try again</Text>
+          </Pressable>
+          <Pressable onPress={signOut}>
+            <Text style={{ color: "#8A8A99" }}>Sign out</Text>
+          </Pressable>
+        </>
+      ) : (
+        <ActivityIndicator color="#7C4DFF" size="large" />
+      )}
+    </View>
+  );
+}
+
 function RootLayoutNav() {
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-    </Stack>
+    <>
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="community/[id]" options={{ headerShown: false }} />
+      </Stack>
+      <RouteGate />
+    </>
   );
 }
 
@@ -76,6 +140,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
+          <AuthProvider>
           <AppProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
@@ -86,6 +151,7 @@ export default function RootLayout() {
               </KeyboardProvider>
             </GestureHandlerRootView>
           </AppProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
