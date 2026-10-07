@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Rect, Stop } from "react-native-svg";
+import { LinearGradient as ExpoGradient } from "expo-linear-gradient";
 import { font } from "@/theme/tokens";
 
 // The Pdb mark: a ringed planet with a spark, on a deep-space tile.
@@ -61,6 +62,29 @@ export function LogoMark({ size = 96, tile = true }: MarkProps) {
   );
 }
 
+// The wordmark logo: "pdb" set in a rounded square. A gradient hairline frames a
+// deep-space tile, a soft light falls from the top left, and a small spark sits on
+// the corner. Used on the welcome and splash screens.
+export function LogoTile({ size = 112 }: { size?: number }) {
+  const r = size * 0.3;
+  const edge = Math.max(1.5, size * 0.016);
+  return (
+    <View style={{ width: size, height: size, borderRadius: r, shadowColor: "#A78BFA", shadowOpacity: 0.45, shadowRadius: size * 0.28, shadowOffset: { width: 0, height: size * 0.08 } }}>
+      <ExpoGradient colors={["#A78BFA", "#D946EF", "#F472B6"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: "absolute", width: size, height: size, borderRadius: r }} />
+      <View style={{ position: "absolute", left: edge, top: edge, right: edge, bottom: edge, borderRadius: r - edge, overflow: "hidden" }}>
+        <ExpoGradient colors={["#2A1F6B", "#0E0B26"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        <ExpoGradient colors={["rgba(255,255,255,0.16)", "rgba(255,255,255,0)"]} start={{ x: 0.1, y: 0 }} end={{ x: 0.7, y: 0.6 }} style={StyleSheet.absoluteFill} />
+        <View style={styles.tileCenter}>
+          <Text style={{ color: "#FFFFFF", fontFamily: font.bold, fontSize: size * 0.42, letterSpacing: -size * 0.025, includeFontPadding: false }}>pdb</Text>
+        </View>
+      </View>
+      <Svg width={size * 0.22} height={size * 0.22} viewBox="0 0 24 24" style={{ position: "absolute", right: size * 0.1, top: size * 0.08 }}>
+        <Path d="M 12 0 L 14.6 9.4 L 24 12 L 14.6 14.6 L 12 24 L 9.4 14.6 L 0 12 L 9.4 9.4 Z" fill="#FDE68A" />
+      </Svg>
+    </View>
+  );
+}
+
 interface LogoProps {
   size?: number;
   // Show the "pdb" wordmark beside the mark.
@@ -78,6 +102,7 @@ export function Logo({ size = 40, wordmark = true, tile = true }: LogoProps) {
 }
 
 const styles = StyleSheet.create({
+  tileCenter: { flex: 1, alignItems: "center", justifyContent: "center" },
   row: { flexDirection: "row", alignItems: "center", gap: 10 },
   word: { color: "#F4F3FA", fontFamily: font.bold, letterSpacing: -1 },
 });

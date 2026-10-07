@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 import { CosmicBackground } from "@/components/cosmic/CosmicBackground";
-import { LogoMark } from "@/components/brand/Logo";
+import { LogoTile } from "@/components/brand/Logo";
 import { font } from "@/theme/tokens";
 
 interface Props {
@@ -11,59 +11,43 @@ interface Props {
   minMs?: number;
 }
 
-// The animated launch screen: the logo blooms out of a star field, the name
-// slides in, then everything fades into the app.
-export function SplashOverlay({ onDone, minMs = 2300 }: Props) {
+// The animated launch screen. Every star and planet drifts in from beyond the
+// edges and settles into place while fading in; the logo and tagline fade up as
+// they arrive. The final frame matches the welcome screen, so the hand-off is a
+// plain cross-fade.
+export function SplashOverlay({ onDone, minMs = 3200 }: Props) {
   const fade = useRef(new Animated.Value(1)).current;
   const logo = useRef(new Animated.Value(0)).current;
-  const halo = useRef(new Animated.Value(0)).current;
-  const word = useRef(new Animated.Value(0)).current;
   const tag = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(logo, { toValue: 1, friction: 6, tension: 60, useNativeDriver: true }),
-      Animated.loop(Animated.timing(halo, { toValue: 1, duration: 2200, easing: Easing.out(Easing.quad), useNativeDriver: true })),
       Animated.sequence([
-        Animated.delay(550),
-        Animated.timing(word, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.delay(500),
+        Animated.timing(logo, { toValue: 1, duration: 1500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       ]),
       Animated.sequence([
-        Animated.delay(1000),
-        Animated.timing(tag, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.delay(1500),
+        Animated.timing(tag, { toValue: 1, duration: 1000, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       ]),
     ]).start();
 
     const timer = setTimeout(() => {
-      Animated.timing(fade, { toValue: 0, duration: 450, useNativeDriver: true }).start(({ finished }) => {
+      Animated.timing(fade, { toValue: 0, duration: 500, useNativeDriver: true }).start(({ finished }) => {
         if (finished) onDone();
       });
     }, minMs);
     return () => clearTimeout(timer);
-  }, [fade, halo, logo, minMs, onDone, tag, word]);
-
-  const haloScale = halo.interpolate({ inputRange: [0, 1], outputRange: [0.8, 2.1] });
-  const haloOpacity = halo.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.35, 0] });
+  }, [fade, logo, minMs, onDone, tag]);
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade, zIndex: 100 }]} pointerEvents="auto">
-      <CosmicBackground variant="full">
+      <CosmicBackground variant="full" gather>
         <View style={styles.center}>
-          <View style={styles.markWrap}>
-            <Animated.View style={[styles.halo, { opacity: haloOpacity, transform: [{ scale: haloScale }] }]} />
-            <Animated.View style={{ opacity: logo, transform: [{ scale: logo.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }) }] }}>
-              <LogoMark size={132} tile={false} />
-            </Animated.View>
-          </View>
-          <Animated.Text
-            style={[
-              styles.word,
-              { opacity: word, transform: [{ translateY: word.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] },
-            ]}
-          >
-            pdb
-          </Animated.Text>
-          <Animated.Text style={[styles.tag, { opacity: tag }]}>Find your type. Find your people.</Animated.Text>
+          <Animated.View style={{ opacity: logo, transform: [{ scale: logo.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] }) }] }}>
+            <LogoTile size={116} />
+          </Animated.View>
+          <Animated.Text style={[styles.tag, { opacity: tag }]}>Find your type.{"\n"}Find your people.</Animated.Text>
         </View>
       </CosmicBackground>
     </Animated.View>
@@ -71,9 +55,8 @@ export function SplashOverlay({ onDone, minMs = 2300 }: Props) {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 6 },
-  markWrap: { width: 132, height: 132, alignItems: "center", justifyContent: "center", marginBottom: 6 },
-  halo: { position: "absolute", width: 132, height: 132, borderRadius: 66, borderWidth: 2, borderColor: "#A78BFA" },
-  word: { color: "#F4F3FA", fontFamily: font.bold, fontSize: 48, letterSpacing: -2 },
-  tag: { color: "rgba(244,243,250,0.6)", fontFamily: font.regular, fontSize: 14, letterSpacing: 0.4 },
+  // The bottom padding leaves room for the welcome screen's buttons, so the logo
+  // lands exactly where the welcome screen puts it.
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 6, paddingBottom: 250 },
+  tag: { color: "rgba(244,243,250,0.62)", fontFamily: font.medium, fontSize: 18, lineHeight: 26, textAlign: "center", marginTop: 22 },
 });
