@@ -8,7 +8,9 @@ import { Platform, StyleSheet, type ViewStyle } from "react-native";
 
 export const IS_WEB = Platform.OS === "web";
 
-type Frames = Record<string, ViewStyle>;
+// Keyframes are plain CSS: transforms must be strings ("translate(10px, 0px)"), because the
+// array form React Native uses is not translated inside keyframes.
+type Frames = Record<string, Record<string, string | number>>;
 
 interface LoopOptions {
   iterations?: "infinite" | number;

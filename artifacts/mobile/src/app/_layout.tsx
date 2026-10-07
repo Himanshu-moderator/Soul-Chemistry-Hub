@@ -59,6 +59,9 @@ export default function RootLayout() {
     ...Ionicons.font,
   });
   const [intro, setIntro] = useState(!introPlayed);
+  // True once the splash starts fading out: only then does the real sky start up.
+  const [skyActive, setSkyActive] = useState(introPlayed);
+  const startSky = useCallback(() => setSkyActive(true), []);
   const finishIntro = useCallback(() => {
     introPlayed = true;
     setIntro(false);
@@ -84,7 +87,7 @@ export default function RootLayout() {
                     <WebFrame>
                       <NavigationTheme value={navigationTheme}>
                       <SkyProvider>
-                      <SkyHost />
+                      <SkyHost active={skyActive} />
                       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" }, animation: "fade" }}>
                         <Stack.Screen name="index" />
                         <Stack.Screen name="auth" />
@@ -95,7 +98,7 @@ export default function RootLayout() {
                       <RouteGate />
                       </SkyProvider>
                       </NavigationTheme>
-                      {intro && <SplashOverlay onDone={finishIntro} />}
+                      {intro && <SplashOverlay onFadeStart={startSky} onDone={finishIntro} />}
                     </WebFrame>
                   </KeyboardProvider>
                 </GestureHandlerRootView>
