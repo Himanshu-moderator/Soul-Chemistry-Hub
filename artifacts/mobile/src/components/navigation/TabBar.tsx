@@ -1,7 +1,8 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import Svg, { Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { font } from "@/theme/tokens";
@@ -24,7 +25,13 @@ type TabBarProps = {
 // Height of the bar itself (without the bottom safe area). Screens use it to leave room.
 export const TAB_BAR_HEIGHT = 64;
 
-// Order is the order on screen; "soul" is the raised centre button.
+// The Soul button sits in a round notch cut into the top edge of the bar.
+const ORB = 52;
+const NOTCH_HALF = 44; // half the width of the notch, where it meets the top edge
+const NOTCH_DEPTH = 34;
+const ORB_TOP = -22; // the orb pokes this far above the bar
+
+// Order is the order on screen; "soul" is the centre button.
 const TABS = [
   { name: "index", label: "Explore" },
   { name: "chats", label: "Chats" },
@@ -46,12 +53,27 @@ function TabIcon({ name, color }: { name: string; color: string }) {
   }
 }
 
+// The bar's outline: a flat top edge with a smooth round notch in the middle.
+function barPaths(width: number, height: number) {
+  const cx = width / 2;
+  const left = cx - NOTCH_HALF;
+  const right = cx + NOTCH_HALF;
+  const notch = `C ${left + 24} 0.5 ${cx - 30} ${NOTCH_DEPTH} ${cx} ${NOTCH_DEPTH} C ${cx + 30} ${NOTCH_DEPTH} ${right - 24} 0.5 ${right} 0.5`;
+  const edge = `M 0 0.5 L ${left} 0.5 ${notch} L ${width} 0.5`;
+  return { edge, fill: `${edge} L ${width} ${height} L 0 ${height} Z` };
+}
+
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const { mode } = useApp();
   const { received } = useSoul();
+  const window = useWindowDimensions();
+  // The app is shown in a column at most 440 wide on large screens.
+  const width = Math.min(window.width, 440);
+  const height = TAB_BAR_HEIGHT + insets.bottom;
+  const paths = barPaths(width, height);
   // The sample inbox only exists in the demo; pending requests count everywhere.
   const unread = (mode === "demo" ? 6 : 0) + received.length;
 
@@ -63,42 +85,47 @@ export function TabBar({ state, navigation }: TabBarProps) {
 
   return (
     <View pointerEvents="box-none" style={styles.wrap}>
-      {/* A solid panel fixed to the bottom edge: nothing shows through or below it. */}
-      <View style={[styles.bar, { height: TAB_BAR_HEIGHT + insets.bottom, paddingBottom: insets.bottom + 9 }]}>
+      <View style={{ height }}>
+        {/* A solid panel fixed to the bottom edge, with a notch for Soul. */}
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          <Path d={paths.fill} fill={colors.surfaceSolid} />
+          <Path d={paths.edge} fill="none" stroke="rgba(255,255,255,0.13)" strokeWidth={1} />
+        </Svg>
 
-        {TABS.map((tab) => {
-          const route = state.routes.find((r) => r.name === tab.name);
-          if (!route) return null;
-          const focused = state.routes[state.index]?.name === tab.name;
-          const color = focused ? colors.accent : colors.tabInactive;
+        <View style={[styles.row, { paddingBottom: insets.bottom }]}>
+          {TABS.map((tab) => {
+            const route = state.routes.find((r) => r.name === tab.name);
+            if (!route) return null;
+            const focused = state.routes[state.index]?.name === tab.name;
+            const color = focused ? colors.accent : colors.tabInactive;
 
-          if (tab.name === "soul") {
+            if (tab.name === "soul") {
+              return (
+                <Pressable key={tab.name} accessibilityRole="button" accessibilityLabel="Soul" onPress={() => press(route, focused)} style={styles.item}>
+                  <View style={styles.orbSpacer} />
+                  <LinearGradient colors={colors.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.orb}>
+                    <Ionicons name="planet" size={26} color="#FFFFFF" />
+                  </LinearGradient>
+                  <Text style={[styles.label, { color }]}>Soul</Text>
+                </Pressable>
+              );
+            }
+
             return (
-              <Pressable key={tab.name} accessibilityRole="button" accessibilityLabel="Soul" onPress={() => press(route, focused)} style={styles.centerSlot}>
-                <View style={[styles.orbGlow, focused && { opacity: 1 }]} />
-                <LinearGradient colors={colors.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.orb}>
-                  <View style={styles.orbRing} />
-                  <Ionicons name="planet" size={24} color="#FFFFFF" />
-                </LinearGradient>
-                <Text style={[styles.label, { color }]}>Soul</Text>
+              <Pressable key={tab.name} accessibilityRole="button" accessibilityLabel={tab.label} onPress={() => press(route, focused)} style={styles.item}>
+                <View>
+                  <TabIcon name={tab.name} color={color} />
+                  {tab.name === "chats" && unread > 0 && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{unread}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={[styles.label, { color }]}>{tab.label}</Text>
               </Pressable>
             );
-          }
-
-          return (
-            <Pressable key={tab.name} accessibilityRole="button" accessibilityLabel={tab.label} onPress={() => press(route, focused)} style={styles.item}>
-              <View>
-                <TabIcon name={tab.name} color={color} />
-                {tab.name === "chats" && unread > 0 && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{unread}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={[styles.label, { color }]}>{tab.label}</Text>
-            </Pressable>
-          );
-        })}
+          })}
+        </View>
       </View>
     </View>
   );
@@ -107,44 +134,20 @@ export function TabBar({ state, navigation }: TabBarProps) {
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
     wrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
-    bar: {
-      flexDirection: "row",
-      alignItems: "flex-end",
-      overflow: "visible",
-      backgroundColor: c.surfaceSolid,
-      borderTopWidth: 1,
-      borderTopColor: c.border,
-    },
-    item: { flex: 1, alignItems: "center", justifyContent: "center", gap: 4, height: "100%", paddingTop: 6 },
+    row: { flex: 1, flexDirection: "row", alignItems: "flex-end", paddingBottom: 0 },
+    item: { flex: 1, alignItems: "center", justifyContent: "center", gap: 4, height: TAB_BAR_HEIGHT },
     label: { fontFamily: font.medium, fontSize: 10.5 },
-    centerSlot: { flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 4 },
-    orbGlow: {
-      position: "absolute",
-      bottom: 14,
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: c.accent,
-      opacity: 0.18,
-    },
+    // Takes the place of an icon so Soul's label lines up with the others.
+    orbSpacer: { height: 23 },
     orb: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
-      marginTop: -16,
+      position: "absolute",
+      top: ORB_TOP,
+      alignSelf: "center",
+      width: ORB,
+      height: ORB,
+      borderRadius: ORB / 2,
       alignItems: "center",
       justifyContent: "center",
-      borderWidth: 3,
-      borderColor: c.surfaceSolid,
-    },
-    orbRing: {
-      position: "absolute",
-      width: 70,
-      height: 18,
-      borderRadius: 18,
-      borderWidth: 2,
-      borderColor: "rgba(255,255,255,0.4)",
-      transform: [{ rotate: "-20deg" }],
     },
     badge: {
       position: "absolute",
