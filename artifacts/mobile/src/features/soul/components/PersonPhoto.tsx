@@ -10,13 +10,32 @@ interface Props {
   index: number;
 }
 
-// A person's photo. With real image URLs in `person.photos` it shows those; without,
-// it draws an illustrated portrait in the person's colours (a different pose for each
-// "photo"), so the prototype works offline and never shows a stranger's real face.
+// A person's photo from `person.photos`. If there is none (or it cannot load), it
+// draws an illustrated portrait in the person's colours instead.
 export function PersonPhoto({ person, index }: Props) {
   const [box, setBox] = useState({ w: 0, h: 0 });
+  const [failed, setFailed] = useState<string[]>([]);
   const uri = person.photos[index];
-  if (uri) return <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />;
+  // A picture that fails to load (offline, say) falls back to the illustrated portrait.
+  if (uri && !failed.includes(uri)) {
+    const onError = () => setFailed((f) => [...f, uri]);
+    // A face is a square picture: show all of it at the top and let it melt into the
+    // person's colours below, instead of cropping it to a tall frame.
+    if (uri.includes("pravatar")) {
+      return (
+        <View style={StyleSheet.absoluteFill} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+          <LinearGradient colors={["#0A0818", "#0A0818", person.tones[1] + "99"]} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFill} />
+          {box.w > 0 && (
+            <>
+              <Image source={{ uri }} style={{ position: "absolute", top: 0, left: 0, width: box.w, height: box.w }} resizeMode="cover" onError={onError} />
+              <LinearGradient colors={["rgba(10,8,24,0)", "#0A0818"]} style={{ position: "absolute", top: box.w * 0.55, left: 0, right: 0, height: box.w * 0.46 }} />
+            </>
+          )}
+        </View>
+      );
+    }
+    return <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" onError={onError} />;
+  }
 
   const [a, b] = person.tones;
   const flip = index % 2 === 1;

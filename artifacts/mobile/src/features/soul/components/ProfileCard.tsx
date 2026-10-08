@@ -1,26 +1,18 @@
 import React, { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChemistryRing, TypeBadge } from "@/components/ui";
-import type { InterestKind, SoulPerson } from "@/data/people";
+import type { SoulPerson } from "@/data/people";
 import { chemistryBetween } from "@/lib/personality";
 import { useApp } from "@/state/AppContext";
 import { useStyles, useTheme } from "@/theme/ThemeProvider";
 import { font, radius, type } from "@/theme/tokens";
 import { withAlpha, type Colors } from "@/theme/themes";
+import { InterestGrid } from "./InterestGrid";
 import { PersonPhoto } from "./PersonPhoto";
-
-const KIND_TINT: Record<InterestKind, string> = {
-  Hobby: "#E7B341",
-  Music: "#22D3EE",
-  Food: "#FB923C",
-  Travel: "#34D399",
-  Value: "#F472B6",
-};
-
-const PHOTO_COUNT = 3;
 
 interface Props {
   person: SoulPerson;
@@ -40,6 +32,7 @@ export function ProfileCard({ person, bottomInset, topAction }: Props) {
   const { height } = useWindowDimensions();
   const { profile } = useApp();
   const [photo, setPhoto] = useState(0);
+  const count = Math.max(person.photos.length, 1);
 
   const pct = chemistryBetween(profile.mbti, person.mbti, person.name.length);
   const heroH = Math.max(480, height);
@@ -53,7 +46,7 @@ export function ProfileCard({ person, bottomInset, topAction }: Props) {
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           <View style={styles.tapRow}>
             <Pressable accessibilityLabel="Previous photo" style={{ flex: 1 }} onPress={() => setPhoto((p) => Math.max(0, p - 1))} />
-            <Pressable accessibilityLabel="Next photo" style={{ flex: 1 }} onPress={() => setPhoto((p) => Math.min(PHOTO_COUNT - 1, p + 1))} />
+            <Pressable accessibilityLabel="Next photo" style={{ flex: 1 }} onPress={() => setPhoto((p) => Math.min(count - 1, p + 1))} />
           </View>
         </View>
         <LinearGradient colors={["rgba(6,5,15,0.55)", "rgba(6,5,15,0)"]} style={styles.topScrim} pointerEvents="none" />
@@ -61,14 +54,14 @@ export function ProfileCard({ person, bottomInset, topAction }: Props) {
 
         <View style={[styles.topBar, { paddingTop: insets.top + 10 }]} pointerEvents="box-none">
           <View style={styles.segments} pointerEvents="none">
-            {Array.from({ length: PHOTO_COUNT }, (_, i) => (
+            {Array.from({ length: count }, (_, i) => (
               <View key={i} style={[styles.segment, { backgroundColor: i <= photo ? "#FFFFFF" : "rgba(255,255,255,0.35)" }]} />
             ))}
           </View>
           {topAction}
         </View>
 
-        <View style={styles.identity} pointerEvents="none">
+        <View style={styles.identity} pointerEvents="box-none">
           <View style={styles.chips}>
             {person.verified && (
               <View style={styles.chip}>
@@ -86,9 +79,17 @@ export function ProfileCard({ person, bottomInset, topAction }: Props) {
               <Text style={styles.chipText}>{person.isOnline ? "online" : `online ${person.lastSeen}`}</Text>
             </View>
           </View>
-          <Text style={styles.name}>
-            {person.name} <Text style={styles.age}>{person.age}</Text>
-          </Text>
+          <View style={styles.nameRow}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Open ${person.name}'s profile`} onPress={() => router.push(`/person/${person.id}` as never)} style={styles.dpFrame}>
+              <Image source={{ uri: person.dp }} style={styles.dp} />
+            </Pressable>
+            <View style={{ flex: 1 }} pointerEvents="none">
+              <Text style={styles.name}>
+                {person.name} <Text style={styles.age}>{person.age}</Text>
+              </Text>
+              <Text style={styles.viewProfile}>View profile</Text>
+            </View>
+          </View>
           <View style={styles.placeRow}>
             <Feather name="map-pin" size={14} color="rgba(255,255,255,0.86)" />
             <Text style={styles.place}>{person.city}, India</Text>
@@ -139,22 +140,7 @@ export function ProfileCard({ person, bottomInset, topAction }: Props) {
 
         <View style={[styles.card, { flexDirection: "column", alignItems: "stretch", gap: 14 }]}>
           <Text style={styles.sectionTitle}>My card</Text>
-          <View style={styles.grid}>
-            {person.interests.map((it) => {
-              const tint = KIND_TINT[it.kind];
-              return (
-                <View key={it.label} style={styles.cell}>
-                  <Text style={[styles.cellKind, { color: tint, backgroundColor: withAlpha(tint, 0.14) }]}>{it.kind}</Text>
-                  <View style={[styles.cellArt, { backgroundColor: withAlpha(tint, 0.1) }]}>
-                    <Text style={styles.cellEmoji}>{it.emoji}</Text>
-                  </View>
-                  <Text style={styles.cellLabel} numberOfLines={1}>
-                    {it.label}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+          <InterestGrid interests={person.interests} />
         </View>
       </View>
     </ScrollView>
@@ -175,6 +161,10 @@ const makeStyles = (c: Colors) =>
     chip: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(10,8,24,0.62)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
     chipText: { color: "#FFFFFF", fontFamily: font.medium, fontSize: 12 },
     dot: { width: 7, height: 7, borderRadius: 4 },
+    nameRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+    dpFrame: { width: 66, height: 66, borderRadius: 33, borderWidth: 2.5, borderColor: "#FFFFFF", overflow: "hidden", backgroundColor: "rgba(255,255,255,0.2)" },
+    dp: { width: "100%", height: "100%" },
+    viewProfile: { color: "rgba(255,255,255,0.75)", fontFamily: font.medium, fontSize: 12.5 },
     name: { color: "#FFFFFF", fontFamily: font.bold, fontSize: 34, letterSpacing: -0.8 },
     age: { fontFamily: font.regular, fontSize: 28 },
     placeRow: { flexDirection: "row", alignItems: "center", gap: 6 },
@@ -194,10 +184,4 @@ const makeStyles = (c: Colors) =>
     sectionTitle: { ...type.heading, color: c.text },
     about: { ...type.body, color: c.text },
     facts: { ...type.caption, color: c.textTertiary },
-    grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-    cell: { width: "31%", flexGrow: 1, backgroundColor: c.surfaceStrong, borderRadius: 18, overflow: "hidden", alignItems: "center", paddingBottom: 10, gap: 8 },
-    cellKind: { alignSelf: "stretch", textAlign: "center", fontFamily: font.semibold, fontSize: 11, paddingVertical: 5, letterSpacing: 0.4 },
-    cellArt: { width: "70%", aspectRatio: 1, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-    cellEmoji: { fontSize: 34 },
-    cellLabel: { color: c.textSecondary, fontFamily: font.medium, fontSize: 12.5, paddingHorizontal: 6 },
   });
