@@ -37,7 +37,7 @@
 Personality-type communities (MBTI, Enneagram, Socionics) are large and passionate, but the apps around them are scattered across quizzes, wikis and group chats. Pdb puts them in one place:
 
 1. **Sign up** (or try the demo) and set up a profile.
-2. **Find your type** with a short chat or a four-question quiz, or pick it if you already know it.
+2. **Find your type** with the classic questionnaire (32+ statements) or a real conversation with PersonaAI, or pick it if you already know it.
 3. **Join communities** for your type and others, and talk in them live.
 4. **Explore** famous people and what their types are.
 5. **See your chemistry** with other types, and keep coming back with a daily check-in, coins and themes.
@@ -47,9 +47,9 @@ Personality-type communities (MBTI, Enneagram, Socionics) are large and passiona
 | Tab | What you get |
 | --- | --- |
 | **Explore** | Search and browse famous personalities with their MBTI and Enneagram, follow them, filter by trending or type, and answer a daily question for coins |
-| **Chats** | A switch at the top flips between your **Chats** and **Communities**. Open a community to talk with its members in real time |
-| **Soul** | Your connections with chemistry scores, discovery modes, and your best chemistry types |
-| **Profile** | Editable name, bio and types, level and streak, badges, an insights chat, and the app and chat theme pickers |
+| **Chats** | A switch at the top flips between **Chats**, **Requests** (received and sent) and **Communities**. Open a community to talk with its members in real time |
+| **Soul** | A deck of people: full-screen photo, scroll for their chemistry with you, interests and idols. Floating buttons pass, message (3 messages until they accept, or a coin Superchat) or like. Tap a profile picture for their full page |
+| **Profile** | Your page like everyone else's (cover, photos, card, idols), Edit Profile, level and streak, badges you earn, an AI insights chat, and the app and chat theme pickers |
 | **Coins** | Coin packs, daily rewards that follow your streak, a 14-day free trial and premium perks |
 
 ## Features
@@ -58,15 +58,16 @@ Personality-type communities (MBTI, Enneagram, Socionics) are large and passiona
 - **A proper onboarding**: profile basics (name, unique @username, bio), then finding your type, then picking communities to join.
 - **Try the demo** with no account: everything works with sample data saved on the device, and "Exit demo" clears it.
 - **Live community chat** (accounts): join a community and talk with its other members. Messages arrive in real time, you can only read and post in rooms you have joined, and posting is rate-limited.
-- **Type finder**: the chat scores each answer across the four MBTI dimensions; the quiz asks one question per dimension. Fifteen of the sixteen types are reachable from the chat, all sixteen from the quiz or the picker.
+- **Two ways to find your type**: a classic-style questionnaire (32 statements, up to 40 when an axis is close, scored on the four Jungian scales) and PersonaAI, a real conversation with a language model that asks a few open questions and names your type only when it is confident.
+- **Soul deck and requests**: likes and first messages become requests; strangers get three messages until they accept; Superchat spends coins to skip the wait.
 - **Everything follows your type**: Explore tiles, chemistry pairings, the Big Five sketch and the insights chat change with your type.
 - **Server-enforced economy** (accounts): coins, streaks, XP and premium can't be edited from the client. The daily check-in, the trial and (demo) coin packs are database functions.
 - **Themes**: six app themes and three chat themes, saved to your account.
 - **One codebase** for iOS, Android and web, shown as a phone-sized column on desktop.
 
-### How "AI" works here
+### How the AI works
 
-The onboarding chat and the PersonaAI insights chat are **scripted**, not a language model: answers are looked up from per-type notes. Swapping in a real model is on the [roadmap](#roadmap). The 1:1 chats with the sample contacts are also scripted; real conversations happen in communities.
+PersonaAI (the onboarding interview and the Profile "Insights" chat) is a **real language model** reached through `src/services/ai`: a Supabase Edge Function holding a free Gemini key (best), a restricted Gemini key in the web build, or free keyless endpoints as a safety net. The interview rules and the code that decides when it may finish are in `src/lib/persona`. Setup, with the steps you do yourself, is in [`docs/AI.md`](docs/AI.md). The classic questionnaire is an original MBTI-style test, not the official MBTI instrument. The 1:1 chats with sample people are scripted; real conversations happen in communities.
 
 ## Design
 
@@ -97,6 +98,7 @@ Row Level Security is on for every table, and the app only ever uses the public 
 3. In **Authentication → Sign In / Providers → Email**, choose whether to require email confirmation (turning it off makes trying the app quicker).
 4. In **Authentication → URL Configuration**, set the Site URL to where you host the app.
 5. Copy `artifacts/mobile/.env.example` to `artifacts/mobile/.env` and fill in the project URL and anon key (Project Settings → API).
+6. Also run `supabase/migrations/20261008000000_spend_coins.sql` (Superchat), and for the AI deploy the edge function: see [`docs/AI.md`](docs/AI.md).
 
 Without these values the app still works: it shows the demo only.
 
@@ -146,17 +148,18 @@ artifacts/mobile/src/
   components/   shared pieces: ui, chat, cosmic (the shared sky + splash), brand (logo), navigation
   theme/        design tokens, app themes, chat themes
   state/        sign-in state and app data
-  services/     the backend client
-  data/ lib/    sample content and pure helpers
-supabase/       database schema
-docs/           architecture, branding, screenshots
+  services/     the backend client and the AI service (providers + fallbacks)
+  lib/          pure logic: mbti questionnaire, persona prompts and rules, helpers
+  data/         sample people, communities and per-type notes
+supabase/       database schema and the persona-ai edge function
+docs/           architecture, AI setup, branding, screenshots
 ```
 
 The full map, plus a "where do I change X?" table, is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Roadmap
 
-- [ ] A real language model behind PersonaAI (a small server-side proxy keeps the key off the device)
+- [x] A real language model behind PersonaAI (edge function proxy)
 - [ ] Direct messages between real members, and people discovery
 - [ ] Google sign-in
 - [ ] Enneagram and Socionics finders, not just MBTI

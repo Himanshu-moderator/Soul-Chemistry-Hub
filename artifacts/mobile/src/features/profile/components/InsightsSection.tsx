@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { LogoMark } from "@/components/brand/Logo";
 import { Card } from "@/components/ui";
 import { TYPE_INSIGHTS } from "@/data/typeInsights";
-import { personaReply } from "@/lib/personaReply";
+import { insightsSystemPrompt } from "@/lib/persona";
+import { chat, type AiMessage } from "@/services/ai";
 import { useApp } from "@/state/AppContext";
 import { useStyles, useTheme } from "@/theme/ThemeProvider";
 import { font, type } from "@/theme/tokens";
@@ -25,9 +26,7 @@ const CARDS: { key: "strength" | "growth" | "career" | "love"; title: string; em
   { key: "love", title: "Love & chemistry", emoji: "💞" },
 ];
 
-const QUICK = ["Compatible types?", "My strengths", "Growth areas", "Career paths"];
-
-// What we know about your type, plus a (scripted) PersonaAI you can ask.
+// What we know about your type, plus a real PersonaAI (a language model) you can ask anything.
 export function InsightsSection() {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
@@ -35,24 +34,37 @@ export function InsightsSection() {
   const insight = TYPE_INSIGHTS[profile.mbti] ?? TYPE_INSIGHTS.INTJ;
 
   const [messages, setMessages] = useState<Msg[]>([
-    { id: "hi", from: "ai", text: "Hi! I'm PersonaAI 🔮 Ask me anything about your personality, compatibility or growth." },
+    { id: "hi", from: "ai", text: "Hi! I'm PersonaAI 🔮 Ask me anything about your personality, compatibility or growth, in your own words." },
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
 
-  const ask = (question: string) => {
+  const reply = (text: string) => alive.current && setMessages((m) => [...m, { id: `a${Date.now()}`, from: "ai", text }]);
+
+  const ask = async (question: string) => {
     const q = question.trim();
     if (!q || typing) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setMessages((m) => [...m, { id: `u${Date.now()}`, from: "user", text: q }]);
+    const next: Msg[] = [...messages, { id: `u${Date.now()}`, from: "user", text: q }];
+    setMessages(next);
     setInput("");
     setTyping(true);
-    timer.current = setTimeout(() => {
-      setMessages((m) => [...m, { id: `a${Date.now()}`, from: "ai", text: personaReply(profile.mbti, q) }]);
-      setTyping(false);
-    }, 1000);
+    try {
+      // The model sees the whole conversation (minus the greeting, which is not part of it).
+      const history: AiMessage[] = next.filter((m) => m.id !== "hi").map((m) => ({ role: m.from === "user" ? "user" : "assistant", content: m.text }));
+      reply(await chat({ system: insightsSystemPrompt(profile.mbti, profile.name), messages: history, temperature: 0.7 }));
+    } catch {
+      reply("I could not reach my brain just now. Please try again in a moment.");
+    } finally {
+      if (alive.current) setTyping(false);
+    }
   };
 
   return (
@@ -96,15 +108,8 @@ export function InsightsSection() {
           )}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 14 }}>
-          {QUICK.map((q) => (
-            <Pressable key={q} onPress={() => ask(q)} style={styles.quick}>
-              <Text style={styles.quickText}>{q}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
 
-        <View style={styles.inputRow}>
+        <View style={[styles.inputRow, { marginTop: 14 }]}>
           <TextInput
             style={styles.input}
             value={input}
@@ -136,8 +141,6 @@ const makeStyles = (c: Colors) =>
     ai: { backgroundColor: c.surfaceStrong, alignSelf: "flex-start", borderBottomLeftRadius: 5 },
     me: { alignSelf: "flex-end", borderBottomRightRadius: 5 },
     text: { color: c.text, fontFamily: font.regular, fontSize: 14.5, lineHeight: 21 },
-    quick: { backgroundColor: c.accentSoft, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-    quickText: { color: c.accent, fontFamily: font.semibold, fontSize: 13 },
     inputRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     input: { flex: 1, backgroundColor: c.surface, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11, color: c.text, fontFamily: font.regular, fontSize: 14.5, outlineStyle: "none" } as object,
     send: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.accent, alignItems: "center", justifyContent: "center" },

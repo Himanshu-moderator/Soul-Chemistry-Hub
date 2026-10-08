@@ -98,7 +98,7 @@ export default function OnboardingScreen() {
 
         {step === "basics" && <BasicsStep initial={initialBasics} onSubmit={submitBasics} />}
         {step === "finder" && <FinderStep onChoose={(m) => go(m === "ai" ? "ai" : m === "quiz" ? "quiz" : "grid")} />}
-        {step === "ai" && <AiChatStep onResult={onType} onProgress={moveProgress} />}
+        {step === "ai" && <AiChatStep onResult={onType} onProgress={moveProgress} onUseQuiz={() => go("quiz")} />}
         {step === "quiz" && <QuizStep onResult={onType} onProgress={moveProgress} />}
         {step === "grid" && <TypeGridStep onPick={onType} />}
         {step === "communities" && <CommunitiesStep key={type} type={type} initial={communitiesFor()} onDone={onCommunities} onSkip={() => go("done")} />}
