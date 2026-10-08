@@ -101,7 +101,7 @@ export default function OnboardingScreen() {
         {step === "ai" && <AiChatStep onResult={onType} onProgress={moveProgress} />}
         {step === "quiz" && <QuizStep onResult={onType} onProgress={moveProgress} />}
         {step === "grid" && <TypeGridStep onPick={onType} />}
-        {step === "communities" && <CommunitiesStep key={type} initial={communitiesFor()} onDone={onCommunities} />}
+        {step === "communities" && <CommunitiesStep key={type} type={type} initial={communitiesFor()} onDone={onCommunities} onSkip={() => go("done")} />}
         {step === "done" && <DoneStep type={type || profile.mbti} onEnter={() => setOnboarded(true)} />}
       </View>
     </Sky>
