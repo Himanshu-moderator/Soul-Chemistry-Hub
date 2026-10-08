@@ -51,7 +51,7 @@ type Raw = Omit<SoulPerson, "dp" | "cover" | "photos" | "idols" | "thoughts" | "
 
 const RAW: Raw[] = [
   {
-    id: "s1", name: "Anushka", age: 22, city: "Uttar Pradesh", flag: "🇮🇳", mbti: "ISTJ", enneagram: "6w5",
+    id: "s1", name: "Anushka", age: 20, city: "Uttar Pradesh", flag: "🇮🇳", mbti: "ISTJ", enneagram: "6w5",
     relationship: "Consigliere", askMe: "What gives life meaning",
     about: "I know suturing. So better see what you speak. Quiet planner, loud laugh once you know me.",
     verified: true, isNew: true, isOnline: true, lastSeen: "now", tones: ["#7C5CFF", "#F472B6"],
@@ -142,7 +142,7 @@ interface Extra {
 }
 
 const EXTRA: Record<string, Extra> = {
-  s1: { img: "https://images.pexels.com/photos/37798732/pexels-photo-37798732.jpeg?auto=compress&cs=tinysrgb&w=900&h=900&fit=crop&crop=faces", idols: [["Dr. Kalpana Chawla", "🚀"], ["Marie Curie", "🔬"], ["Socrates", "🏛️"]], thoughts: ["Anatomy exams taught me patience more than any book.", "Is it normal to feel calmest at 3 a.m.?"] },
+  s1: { img: "https://images.pexels.com/photos/39559946/pexels-photo-39559946.jpeg?auto=compress&cs=tinysrgb&w=1080&h=1600&fit=crop", idols: [["Dr. Kalpana Chawla", "🚀"], ["Marie Curie", "🔬"], ["Socrates", "🏛️"]], thoughts: ["Anatomy exams taught me patience more than any book.", "Is it normal to feel calmest at 3 a.m.?"] },
   s2: { img: 12, idols: [["Elon Musk", "🛰️"], ["Zakir Khan", "🎤"], ["Steve Jobs", "🍎"]], thoughts: ["Pitched a terrible idea today. 10/10 would pitch again.", "Debate me about pineapple on pizza."] },
   s3: { img: 32, idols: [["Maya Angelou", "🪶"], ["Haruki Murakami", "📚"], ["Ruskin Bond", "🏔️"]], thoughts: ["Rain plus chai plus a good book is a complete personality.", "Some silences are the loudest kind of honest."] },
   s4: { img: 59, idols: [["Nikola Tesla", "⚡"], ["Magnus Carlsen", "♟️"], ["Ratan Tata", "🏭"]], thoughts: ["Optimising my morning routine again. Send help.", "Best code I wrote this year was a delete."] },

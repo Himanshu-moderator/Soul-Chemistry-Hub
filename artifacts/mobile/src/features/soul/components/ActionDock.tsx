@@ -27,7 +27,7 @@ export function ActionDock({ onPass, onMessage, onLike, disabled }: Props) {
   };
 
   return (
-    <View pointerEvents="box-none" style={[styles.dock, { bottom: insets.bottom + TAB_BAR_HEIGHT + 16 }]}>
+    <View pointerEvents="box-none" style={[styles.dock, { bottom: insets.bottom + TAB_BAR_HEIGHT + 46 }]}>
       <Pressable accessibilityRole="button" accessibilityLabel="Pass" onPress={tap(onPass)} style={[styles.btn, styles.small, { backgroundColor: "#4B4A5E" }]}>
         <Feather name="x" size={26} color="#FFFFFF" />
       </Pressable>

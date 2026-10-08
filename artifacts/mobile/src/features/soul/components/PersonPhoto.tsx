@@ -21,7 +21,8 @@ export function PersonPhoto({ person, index }: Props) {
     const onError = () => setFailed((f) => [...f, uri]);
     // A face is a square picture: show all of it at the top and let it melt into the
     // person's colours below, instead of cropping it to a tall frame.
-    if (index === 0) {
+    // (tall photos fill the frame; only square face pictures need this treatment)
+    if (index === 0 && !uri.includes("pexels")) {
       return (
         <View style={StyleSheet.absoluteFill} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
           <LinearGradient colors={["#0A0818", "#0A0818", person.tones[1] + "99"]} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFill} />
