@@ -96,6 +96,7 @@ export default function RootLayout() {
                         <Stack.Screen name="(tabs)" />
                         <Stack.Screen name="onboarding" />
                         <Stack.Screen name="community/[id]" options={{ animation: "slide_from_right" }} />
+                        <Stack.Screen name="person/[id]" options={{ animation: "slide_from_right" }} />
                       </Stack>
                       <RouteGate />
                       </SkyProvider>
