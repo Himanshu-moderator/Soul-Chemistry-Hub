@@ -16,7 +16,7 @@ interface Props {
 
 const BIG_FIVE: Record<string, string> = { O: "Openness", C: "Conscientiousness", E: "Extraversion", A: "Agreeableness", N: "Neuroticism" };
 
-// Your three types, your badges and a Big Five sketch.
+// Your three types and a Big Five sketch.
 export function OverviewSection({ onPick }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
@@ -39,17 +39,6 @@ export function OverviewSection({ onPick }: Props) {
               <Text style={styles.typeValue}>{t.value}</Text>
               <Feather name="chevron-down" size={14} color={t.tint} />
             </Pressable>
-          ))}
-        </View>
-      </View>
-
-      <View>
-        <SectionTitle title="Badges" />
-        <View style={styles.badges}>
-          {profile.badges.map((b) => (
-            <View key={b} style={styles.badge}>
-              <Text style={styles.badgeText}>🏅 {b}</Text>
-            </View>
           ))}
         </View>
       </View>
@@ -82,9 +71,6 @@ const makeStyles = (c: Colors) =>
     typeCard: { flex: 1, borderRadius: 18, paddingVertical: 14, alignItems: "center", gap: 3 },
     typeLabel: { fontFamily: font.semibold, fontSize: 11.5, letterSpacing: 0.5, textTransform: "uppercase" },
     typeValue: { color: c.text, fontFamily: font.bold, fontSize: 20 },
-    badges: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    badge: { backgroundColor: c.surface, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
-    badgeText: { color: c.text, fontFamily: font.medium, fontSize: 13.5 },
     barLabels: { flexDirection: "row", justifyContent: "space-between" },
     barName: { color: c.text, fontFamily: font.medium, fontSize: 14 },
     barValue: { color: c.textSecondary, fontFamily: font.semibold, fontSize: 14 },

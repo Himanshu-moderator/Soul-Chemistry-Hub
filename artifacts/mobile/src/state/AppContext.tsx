@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MY_PROFILE, FAMOUS_PEOPLE } from "@/data/mockData";
+import { MY_PROFILE, FAMOUS_PEOPLE, PROFILE_EXTRA_KEYS } from "@/data/mockData";
 import { supabase } from "@/services/supabase";
 import { useAuth } from "@/state/AuthContext";
 
@@ -67,6 +67,14 @@ type ProfileRow = {
   trial_started_at: string | null;
   created_at: string;
 };
+
+// The device-only profile fields (photos, interests...) of a profile.
+const extrasOf = (p: Profile): Partial<Profile> => {
+  const out: Record<string, unknown> = {};
+  for (const k of PROFILE_EXTRA_KEYS) out[k] = p[k];
+  return out as Partial<Profile>;
+};
+const extrasKey = (userId: string) => `profileExtras:${userId}`;
 
 function profileFromRow(r: ProfileRow, followingCount: number): Profile {
   const badges = ["Early Adopter"];
@@ -190,8 +198,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (m.error) throw m.error;
           const row = p.data as ProfileRow;
           const follows = (f.data ?? []).map((x: { person_id: string }) => x.person_id);
+          let extras: Partial<Profile> = {};
+          try {
+            const raw = await AsyncStorage.getItem(extrasKey(userId));
+            if (raw) extras = JSON.parse(raw) as Partial<Profile>;
+          } catch {
+            // no saved extras
+          }
           apply({
-            profile: profileFromRow(row, follows.length),
+            profile: { ...profileFromRow(row, follows.length), ...extras },
             coins: row.coins,
             followedPeople: follows,
             joinedCommunities: (m.data ?? []).map((x: { community_id: string }) => x.community_id),
@@ -261,7 +276,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const prev = latest.current;
     const next: State = {
       ...prev,
-      profile: profileFromRow(row, prev.followedPeople.length),
+      profile: { ...profileFromRow(row, prev.followedPeople.length), ...extrasOf(prev.profile) },
       coins: row.coins,
       isPremium: row.is_premium,
       trialActive: !!row.trial_started_at,
@@ -276,6 +291,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const previous = latest.current.profile;
       update({ profile: { ...previous, ...updates } });
       if (!account) return { ok: true };
+      if (PROFILE_EXTRA_KEYS.some((k) => k in updates)) {
+        AsyncStorage.setItem(extrasKey(userId!), JSON.stringify(extrasOf(latest.current.profile))).catch(() => {});
+      }
       const cols = columnsFor(updates);
       if (Object.keys(cols).length === 0) return { ok: true };
       const { error } = await supabase!.from("profiles").update(cols).eq("id", userId!);

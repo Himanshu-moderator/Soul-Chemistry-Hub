@@ -189,6 +189,10 @@ export const COMPATIBILITY_PAIRS = [
   { type1: "ENFJ", type2: "INFP", score: 93, label: "Dream Team", note: "The leader and the idealist — inspiring each other endlessly." },
 ];
 
+import type { Interest } from "./people";
+
+// Your own profile. The first block is stored on the server for accounts; everything
+// under "Profile page extras" is kept on this device (see AppContext).
 export const MY_PROFILE = {
   id: "me",
   name: "Alex Rivera",
@@ -211,4 +215,45 @@ export const MY_PROFILE = {
   badges: ["Early Adopter", "Type Scholar", "7-Day Streak"],
   bestConnections: ["u4", "u1", "u7"],
   mostCompatible: ["ENFP", "INFP", "ENTP"],
+
+  // Profile page extras
+  verified: false,
+  location: "Mumbai, India",
+  profession: "Product manager",
+  education: "B.Tech, Computer Science",
+  languages: "English, Hindi",
+  relationship: "Friends who get me",
+  askMe: "How I plan my week",
+  interests: [
+    { kind: "Hobby", label: "Strategy games", emoji: "🎲" },
+    { kind: "Hobby", label: "Reading", emoji: "📚" },
+    { kind: "Music", label: "Lo-fi", emoji: "🎧" },
+    { kind: "Food", label: "Coffee", emoji: "☕" },
+    { kind: "Travel", label: "Mountains", emoji: "🏔️" },
+    { kind: "Value", label: "Curiosity", emoji: "✨" },
+  ] as Interest[],
+  idols: [
+    { name: "Nikola Tesla", emoji: "⚡" },
+    { name: "Ratan Tata", emoji: "🏭" },
+    { name: "Steve Jobs", emoji: "🍎" },
+  ] as { name: string; emoji: string }[],
+  photos: [] as string[], // up to 6 pictures
+  cover: null as string | null,
+  dp: null as string | null,
 };
+
+// The keys above that live only on this device.
+export const PROFILE_EXTRA_KEYS = [
+  "verified",
+  "location",
+  "profession",
+  "education",
+  "languages",
+  "relationship",
+  "askMe",
+  "interests",
+  "idols",
+  "photos",
+  "cover",
+  "dp",
+] as const;

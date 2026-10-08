@@ -91,3 +91,9 @@ The star field is drawn **once**, behind the whole navigator (`SkyHost` in `src/
 - `features/chats/components/RequestsList.tsx` is the Requests section of Chats (Received / Sent). `DirectChat` serves both the sample contacts and people from the deck.
 - Photos: `SoulPerson.photos` takes image URLs; while empty, `PersonPhoto` draws an illustrated portrait.
 - Profile page: tapping the small profile picture on a deck card opens `/person/[id]` (`features/soul/PersonProfileScreen.tsx`): cover, profile picture, tabs for About Me / Thoughts / Activities, a photo gallery, idols and the interest cards (`InterestGrid`). The pictures in `data/people.ts` are placeholder URLs (pravatar.cc faces, picsum.photos scenes), not real people.
+
+## Your profile
+
+- `features/profile/ProfileScreen.tsx`: your page, laid out like everyone else's (`ProfileTop`: cover, picture, name, stats, level) with tabs About Me / Insights / Themes. `AboutTab` shows your photos, what you are looking for, bio, details, idols, interest card, badges (`BadgesSection`), types and Big Five.
+- `features/profile/EditProfileScreen.tsx` (route `/edit-profile`): photo grid, profile and cover pictures, verify, and rows for bio, card, idols, profession and so on. Every change saves at once through `saveProfile`.
+- The extra fields (photos, interests, idols, profession...) are listed in `PROFILE_EXTRA_KEYS` (`data/mockData.ts`). They are stored on this device only: with the demo's saved state, and for accounts under `profileExtras:<user id>` (the backend schema only has the core profile columns). Photos are picked with `lib/pickImage.ts`, which shrinks them on the web so they fit in browser storage.
