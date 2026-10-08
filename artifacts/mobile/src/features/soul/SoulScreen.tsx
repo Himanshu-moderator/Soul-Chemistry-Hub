@@ -105,7 +105,7 @@ export default function SoulScreen() {
       </View>
 
       {toast && (
-        <View pointerEvents="none" style={[styles.toast, { bottom: insets.bottom + TAB_BAR_HEIGHT + 100 }]}>
+        <View pointerEvents="none" style={[styles.toast, { bottom: insets.bottom + TAB_BAR_HEIGHT + 130 }]}>
           <Text style={styles.toastText}>{toast}</Text>
         </View>
       )}

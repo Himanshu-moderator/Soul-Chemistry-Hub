@@ -158,7 +158,7 @@ const makeStyles = (c: Colors) =>
     topBar: { position: "absolute", left: 0, right: 0, top: 0, paddingHorizontal: 16, gap: 12 },
     segments: { flexDirection: "row", gap: 5 },
     segment: { flex: 1, height: 3, borderRadius: 2 },
-    identity: { position: "absolute", left: 20, right: 20, bottom: 112, gap: 6 },
+    identity: { position: "absolute", left: 20, right: 20, bottom: 142, gap: 6 },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 4 },
     chip: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(10,8,24,0.62)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
     chipText: { color: "#FFFFFF", fontFamily: font.medium, fontSize: 12 },
