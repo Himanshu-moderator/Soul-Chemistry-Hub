@@ -1,5 +1,5 @@
-import React from "react";
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from "react-native-svg";
@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { font } from "@/theme/tokens";
 import { useStyles, useTheme } from "@/theme/ThemeProvider";
-import { withAlpha, type Colors } from "@/theme/themes";
+import type { Colors } from "@/theme/themes";
 import { useApp } from "@/state/AppContext";
 import { useSoul } from "@/state/SoulContext";
 
@@ -39,17 +39,84 @@ const TABS = [
   { name: "market", label: "Coins" },
 ] as const;
 
-function TabIcon({ name, color }: { name: string; color: string }) {
+function TabIcon({ name, color, glow }: { name: string; color: string; glow?: string }) {
+  // The glow is a soft shadow in the accent colour round the icon's outline.
+  const style = glow ? { textShadowColor: glow, textShadowRadius: 10, textShadowOffset: { width: 0, height: 0 } } : undefined;
   switch (name) {
     case "index":
-      return <Feather name="compass" size={22} color={color} />;
+      return <Feather name="compass" size={22} color={color} style={style} />;
     case "chats":
-      return <Feather name="message-circle" size={22} color={color} />;
+      return <Feather name="message-circle" size={22} color={color} style={style} />;
     case "profile":
-      return <Feather name="user" size={22} color={color} />;
+      return <Feather name="user" size={22} color={color} style={style} />;
     default:
-      return <Ionicons name="sparkles-outline" size={22} color={color} />;
+      return <Ionicons name="sparkles-outline" size={22} color={color} style={style} />;
   }
+}
+
+// 0 -> 1 when a tab becomes the active one, with a little spring.
+function useActive(focused: boolean) {
+  const t = useRef(new Animated.Value(focused ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.spring(t, { toValue: focused ? 1 : 0, friction: 7, tension: 150, useNativeDriver: true }).start();
+  }, [focused, t]);
+  return t;
+}
+
+interface ButtonProps {
+  focused: boolean;
+  label: string;
+  onPress: () => void;
+}
+
+// An ordinary tab: when active, its icon rises a little, grows a little, and turns
+// purple with a glow round its outline.
+function TabButton({ name, focused, label, badge, onPress }: ButtonProps & { name: string; badge?: number }) {
+  const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
+  const t = useActive(focused);
+  const color = focused ? colors.accent : "rgba(244,243,250,0.5)";
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.item}>
+      <Animated.View style={{ transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }, { scale: t.interpolate({ inputRange: [0, 1], outputRange: [1, 1.2] }) }] }}>
+        <TabIcon name={name} color={color} glow={focused ? colors.accent : undefined} />
+        {!!badge && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badge}</Text>
+          </View>
+        )}
+      </Animated.View>
+      <Text style={[styles.label, { color }, focused && { fontFamily: font.semibold }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+// The Soul button in the swell of the bar: it rises a touch and its ring glows when active.
+function SoulButton({ focused, onPress }: Omit<ButtonProps, "label">) {
+  const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
+  const t = useActive(focused);
+  const color = focused ? colors.accent : "rgba(244,243,250,0.5)";
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel="Soul" onPress={onPress} style={styles.item}>
+      <Animated.View
+        style={[
+          styles.orbWrap,
+          {
+            borderColor: focused ? colors.accent : "rgba(255,255,255,0.12)",
+            shadowOpacity: focused ? 0.85 : 0.35,
+            transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }, { scale: t.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] }) }],
+          },
+        ]}
+      >
+        <LinearGradient colors={colors.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.orb}>
+          <Ionicons name="planet" size={27} color="#FFFFFF" />
+        </LinearGradient>
+      </Animated.View>
+      <View style={styles.soulSpacer} />
+      <Text style={[styles.label, { color }, focused && { fontFamily: font.semibold }]}>Soul</Text>
+    </Pressable>
+  );
 }
 
 // The bar's outline, drawn in a box that starts BUMP above the bar: a flat top edge
@@ -109,35 +176,10 @@ export function TabBar({ state, navigation }: TabBarProps) {
             const route = state.routes.find((r) => r.name === tab.name);
             if (!route) return null;
             const focused = state.routes[state.index]?.name === tab.name;
-            const color = focused ? colors.accent : "rgba(244,243,250,0.5)";
 
-            if (tab.name === "soul") {
-              return (
-                <Pressable key={tab.name} accessibilityRole="button" accessibilityLabel="Soul" onPress={() => press(route, focused)} style={styles.item}>
-                  <View style={[styles.orbWrap, { borderColor: focused ? withAlpha(colors.accent, 0.55) : "rgba(255,255,255,0.12)" }]}>
-                    <LinearGradient colors={colors.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.orb}>
-                      <Ionicons name="planet" size={27} color="#FFFFFF" />
-                    </LinearGradient>
-                  </View>
-                  <View style={styles.soulSpacer} />
-                  <Text style={[styles.label, { color }]}>Soul</Text>
-                </Pressable>
-              );
-            }
-
-            return (
-              <Pressable key={tab.name} accessibilityRole="button" accessibilityLabel={tab.label} onPress={() => press(route, focused)} style={styles.item}>
-                <View style={[styles.iconPill, focused && { backgroundColor: withAlpha(colors.accent, 0.16) }]}>
-                  <TabIcon name={tab.name} color={color} />
-                  {tab.name === "chats" && unread > 0 && (
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>{unread}</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={[styles.label, { color }, focused && { fontFamily: font.semibold }]}>{tab.label}</Text>
-              </Pressable>
-            );
+            const go = () => press(route, focused);
+            if (tab.name === "soul") return <SoulButton key={tab.name} focused={focused} onPress={go} />;
+            return <TabButton key={tab.name} name={tab.name} label={tab.label} focused={focused} badge={tab.name === "chats" ? unread : 0} onPress={go} />;
           })}
         </View>
       </View>
@@ -153,7 +195,6 @@ const makeStyles = (c: Colors) =>
     row: { flex: 1, flexDirection: "row", alignItems: "flex-end" },
     item: { flex: 1, alignItems: "center", justifyContent: "center", gap: 3, height: TAB_BAR_HEIGHT },
     label: { fontFamily: font.medium, fontSize: 10.5 },
-    iconPill: { width: 46, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
     // The ring around the Soul orb, sitting in the swell of the bar.
     orbWrap: {
       position: "absolute",
@@ -176,7 +217,7 @@ const makeStyles = (c: Colors) =>
     badge: {
       position: "absolute",
       top: -5,
-      right: 2,
+      right: -9,
       minWidth: 16,
       height: 16,
       borderRadius: 8,
