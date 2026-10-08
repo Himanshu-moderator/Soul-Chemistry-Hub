@@ -8,7 +8,8 @@
 //   supabase functions deploy persona-ai
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest";
+// Tried in order: when one is busy (503) or over quota (429) the next is used.
+const MODELS = (Deno.env.get("GEMINI_MODELS") ?? "gemini-flash-latest,gemini-flash-lite-latest,gemini-2.0-flash").split(",").map((m) => m.trim());
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -57,19 +58,25 @@ Deno.serve(async (req) => {
 
   const temperature = typeof body.temperature === "number" ? Math.max(0, Math.min(1.2, body.temperature)) : 0.4;
 
-  const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: system }] },
-      contents,
-      generationConfig: { temperature, ...(body.json === true ? { responseMimeType: "application/json" } : {}) },
-    }),
+  const payload = JSON.stringify({
+    systemInstruction: { parts: [{ text: system }] },
+    contents,
+    generationConfig: { temperature, ...(body.json === true ? { responseMimeType: "application/json" } : {}) },
   });
 
-  if (!upstream.ok) {
+  let upstream: Response | null = null;
+  for (const model of MODELS) {
+    upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
+      body: payload,
+    });
+    if (upstream.ok || ![429, 500, 503, 404].includes(upstream.status)) break;
+  }
+
+  if (!upstream || !upstream.ok) {
     // Pass the status through (429 means the free quota is used up for now) but not the details.
-    return reply({ error: `Gemini returned ${upstream.status}` }, upstream.status === 429 ? 429 : 502);
+    return reply({ error: `Gemini returned ${upstream?.status ?? "nothing"}` }, upstream?.status === 429 ? 429 : 502);
   }
 
   const data = await upstream.json();

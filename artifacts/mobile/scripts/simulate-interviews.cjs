@@ -27,7 +27,8 @@ const path = require("path");
 const { execSync } = require("child_process");
 
 const KEY = process.env.GEMINI_KEY;
-const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
+// Tried in order; when one is busy (HTTP 503) or rate limited the next one is used.
+const MODELS = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.0-flash"];
 const PAUSE_MS = Number(process.env.PAUSE_MS || 4500);
 
 if (!KEY && !process.argv.includes("--check")) {
@@ -83,29 +84,32 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function gemini(system, messages, json) {
   await sleep(PAUSE_MS);
-  for (let attempt = 0; attempt < 5; attempt++) {
-    try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": KEY },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: system }] },
-          contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
-          generationConfig: { temperature: json ? 0.3 : 0.9, ...(json ? { responseMimeType: "application/json" } : {}) },
-        }),
-      });
-      if (r.status === 429) {
-        await sleep(20000);
-        continue;
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: system }] },
+    contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+    generationConfig: { temperature: json ? 0.3 : 0.9, ...(json ? { responseMimeType: "application/json" } : {}) },
+  });
+  for (let round = 0; round < 5; round++) {
+    for (const model of MODELS) {
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": KEY },
+          body,
+        });
+        if (r.status === 503 || r.status === 429 || r.status === 404 || r.status === 500) {
+          console.log(`   (${model} busy: HTTP ${r.status}, trying the next one)`);
+          continue;
+        }
+        if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 200));
+        const data = await r.json();
+        const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("");
+        if (text) return text;
+      } catch (e) {
+        console.log("   (error:", e.message.slice(0, 120) + ")");
       }
-      if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 200));
-      const body = await r.json();
-      const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("");
-      if (text) return text;
-    } catch (e) {
-      console.log("   (retrying:", e.message.slice(0, 120) + ")");
-      await sleep(8000);
     }
+    await sleep(15000); // every model was busy: wait a bit and go round again
   }
   throw new Error("The model could not be reached");
 }
