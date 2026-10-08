@@ -50,11 +50,11 @@ export function FinderStep({ onChoose }: Props) {
     <View style={styles.content}>
       <Text style={styles.emoji}>🔮</Text>
       <Text style={styles.title}>Find your type</Text>
-      <Text style={styles.sub}>Chat with PersonaAI or take a quick quiz. It takes about two minutes.</Text>
+      <Text style={styles.sub}>Chat with PersonaAI for a quick, personal read, or take the classic questionnaire.</Text>
 
       <View style={{ gap: 12, marginTop: 18 }}>
-        {option("ai", "🤖", "Chat with PersonaAI", "A friendly conversation · 2 min", true)}
-        {option("quiz", "📝", "Quick quiz", "Four questions · the classic test")}
+        {option("ai", "🤖", "Chat with PersonaAI", "A short real conversation · about 3 min", true)}
+        {option("quiz", "📝", "Classic questionnaire", "About 32 statements · 5 min")}
       </View>
 
       <Pressable onPress={() => onChoose("known")} style={styles.known} hitSlop={10}>

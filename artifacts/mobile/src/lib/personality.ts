@@ -1,47 +1,6 @@
-// Turns the PersonaAI chat answers into an MBTI type. Each answer nudges the
-// four dimensions; the higher side of each pair wins. Ties go to the first
-// letter listed in TIE_BREAK so the result is always deterministic.
-
-type Dim = "E" | "I" | "S" | "N" | "T" | "F" | "J" | "P";
-type Votes = Partial<Record<Dim, number>>;
-
-// Answers to the three real questions, in the order they are asked.
-// (The opening "Ready?" answer carries no personality signal.)
-const WEEKEND: Votes[] = [
-  { I: 1, N: 1, F: 1 }, // deep conversation with a close friend
-  { E: 2 }, // big party with lots of new people
-  { I: 2, N: 1, P: 1 }, // solo creative project
-  { E: 1, S: 1, P: 2 }, // adventure trip
-];
-const DECISION: Votes[] = [
-  { T: 2, J: 1 }, // pros and cons list
-  { F: 1, P: 1, S: 1 }, // gut feeling
-  { F: 1, E: 1 }, // ask trusted people
-  { T: 1, J: 1, I: 1 }, // research extensively
-];
-const FRIENDS: Votes[] = [
-  { I: 1, N: 1, T: 1 }, // the deep thinker
-  { E: 2, F: 1 }, // the social butterfly
-  { S: 1, J: 1, I: 1 }, // the reliable one
-  { N: 2, P: 1 }, // the creative visionary
-];
-
-const PAIRS: [Dim, Dim][] = [
-  ["I", "E"],
-  ["N", "S"],
-  ["F", "T"],
-  ["P", "J"],
-];
-
-export function typeFromAnswers(weekend: number, decision: number, friends: number): string {
-  const totals: Votes = {};
-  for (const votes of [WEEKEND[weekend], DECISION[decision], FRIENDS[friends]]) {
-    for (const [dim, n] of Object.entries(votes ?? {}) as [Dim, number][]) {
-      totals[dim] = (totals[dim] ?? 0) + n;
-    }
-  }
-  return PAIRS.map(([first, second]) => ((totals[second] ?? 0) > (totals[first] ?? 0) ? second : first)).join("");
-}
+// Personality helpers shared by the screens: which types click, a Big Five sketch,
+// and an illustrative chemistry score between two types. (Finding your type lives in
+// lib/mbti for the questionnaire and lib/persona for the AI chat.)
 
 // Pairings commonly cited as the easiest fits (a rule of thumb, not science).
 export const COMPATIBLE_TYPES: Record<string, [string, string]> = {
