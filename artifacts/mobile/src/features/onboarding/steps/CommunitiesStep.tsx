@@ -5,17 +5,21 @@ import * as Haptics from "expo-haptics";
 import { Button } from "@/components/ui";
 import { COMMUNITIES } from "@/data/mockData";
 import { useStyles, useTheme } from "@/theme/ThemeProvider";
-import { font, radius, type } from "@/theme/tokens";
+import { font, type } from "@/theme/tokens";
 import { withAlpha, type Colors } from "@/theme/themes";
 
 interface Props {
   // Communities that start selected (already joined, plus the one for your type).
   initial: string[];
+  // Your type, so its community is listed first.
+  type: string;
   onDone: (picked: string[]) => void;
+  // Leave without joining anything.
+  onSkip: () => void;
 }
 
-// Pick a few communities to join.
-export function CommunitiesStep({ initial, onDone }: Props) {
+// An optional step: tap any communities you like, or skip it.
+export function CommunitiesStep({ initial, type: mine, onDone, onSkip }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const [picked, setPicked] = useState<string[]>(initial);
@@ -25,37 +29,35 @@ export function CommunitiesStep({ initial, onDone }: Props) {
     setPicked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   };
 
+  // Your own type's community first, then the rest in their usual order.
+  const list = [...COMMUNITIES].sort((a, b) => Number(b.code === mine) - Number(a.code === mine));
+
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.title}>Join your people</Text>
-        <Text style={styles.sub}>Pick a few communities. You can change this any time.</Text>
+        <Text style={styles.title}>Join a community</Text>
+        <Text style={styles.sub}>Optional. Tap any you like, or skip: you can always join later.</Text>
       </View>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {COMMUNITIES.map((c) => {
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.chips} showsVerticalScrollIndicator={false}>
+        {list.map((c) => {
           const on = picked.includes(c.id);
           return (
             <Pressable
               key={c.id}
               onPress={() => toggle(c.id)}
-              style={[styles.row, { backgroundColor: on ? withAlpha(c.color, 0.16) : colors.surface, borderColor: on ? c.color : "transparent" }]}
+              style={[styles.chip, { backgroundColor: on ? withAlpha(c.color, 0.18) : colors.surface, borderColor: on ? c.color : colors.border }]}
             >
-              <View style={[styles.badge, { backgroundColor: withAlpha(c.color, 0.22) }]}>
-                <Text style={[styles.badgeText, { color: c.color }]}>{c.code}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{c.name}</Text>
-                <Text style={styles.desc} numberOfLines={1}>
-                  {c.description}
-                </Text>
-              </View>
-              <Feather name={on ? "check-circle" : "circle"} size={22} color={on ? c.color : colors.textTertiary} />
+              {on ? <Feather name="check" size={14} color={c.color} /> : <View style={[styles.dot, { backgroundColor: c.color }]} />}
+              <Text style={[styles.chipText, on && { color: colors.text }]} numberOfLines={1}>
+                {c.name}
+              </Text>
             </Pressable>
           );
         })}
       </ScrollView>
       <View style={styles.footer}>
-        <Button label={picked.length ? `Join ${picked.length} & continue` : "Skip for now"} onPress={() => onDone(picked)} />
+        {picked.length > 0 && <Button label={`Join ${picked.length} & continue`} onPress={() => onDone(picked)} />}
+        <Button label="Skip for now" variant={picked.length > 0 ? "ghost" : "primary"} onPress={onSkip} />
       </View>
     </View>
   );
@@ -64,14 +66,12 @@ export function CommunitiesStep({ initial, onDone }: Props) {
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
     root: { flex: 1 },
-    header: { paddingHorizontal: 24, paddingTop: 6, paddingBottom: 14 },
+    header: { paddingHorizontal: 24, paddingTop: 6, paddingBottom: 16 },
     title: { ...type.title, color: c.text },
     sub: { ...type.body, color: c.textSecondary, marginTop: 4 },
-    list: { paddingHorizontal: 20, gap: 10, paddingBottom: 12 },
-    row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1.5 },
-    badge: { width: 66, height: 42, paddingHorizontal: 4, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-    badgeText: { fontFamily: font.bold, fontSize: 11 },
-    name: { color: c.text, fontFamily: font.semibold, fontSize: 15 },
-    desc: { color: c.textSecondary, fontFamily: font.regular, fontSize: 12.5, marginTop: 2 },
-    footer: { paddingHorizontal: 20, paddingBottom: 18, paddingTop: 6 },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 10, paddingHorizontal: 20, paddingBottom: 12 },
+    chip: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, height: 40, borderRadius: 20, borderWidth: 1, maxWidth: "100%" },
+    dot: { width: 8, height: 8, borderRadius: 4 },
+    chipText: { color: c.textSecondary, fontFamily: font.medium, fontSize: 14, flexShrink: 1 },
+    footer: { paddingHorizontal: 20, paddingBottom: 18, paddingTop: 6, gap: 8 },
   });
