@@ -142,7 +142,7 @@ interface Extra {
 }
 
 const EXTRA: Record<string, Extra> = {
-  s1: { img: 26, idols: [["Dr. Kalpana Chawla", "🚀"], ["Marie Curie", "🔬"], ["Socrates", "🏛️"]], thoughts: ["Anatomy exams taught me patience more than any book.", "Is it normal to feel calmest at 3 a.m.?"] },
+  s1: { img: 25, idols: [["Dr. Kalpana Chawla", "🚀"], ["Marie Curie", "🔬"], ["Socrates", "🏛️"]], thoughts: ["Anatomy exams taught me patience more than any book.", "Is it normal to feel calmest at 3 a.m.?"] },
   s2: { img: 12, idols: [["Elon Musk", "🛰️"], ["Zakir Khan", "🎤"], ["Steve Jobs", "🍎"]], thoughts: ["Pitched a terrible idea today. 10/10 would pitch again.", "Debate me about pineapple on pizza."] },
   s3: { img: 32, idols: [["Maya Angelou", "🪶"], ["Haruki Murakami", "📚"], ["Ruskin Bond", "🏔️"]], thoughts: ["Rain plus chai plus a good book is a complete personality.", "Some silences are the loudest kind of honest."] },
   s4: { img: 59, idols: [["Nikola Tesla", "⚡"], ["Magnus Carlsen", "♟️"], ["Ratan Tata", "🏭"]], thoughts: ["Optimising my morning routine again. Send help.", "Best code I wrote this year was a delete."] },

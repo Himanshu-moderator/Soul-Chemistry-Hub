@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TAB_BAR_HEIGHT } from "@/components/navigation/TabBar";
 import { useTheme } from "@/theme/ThemeProvider";
 
 interface Props {
@@ -26,7 +27,7 @@ export function ActionDock({ onPass, onMessage, onLike, disabled }: Props) {
   };
 
   return (
-    <View pointerEvents="box-none" style={[styles.dock, { bottom: Math.max(insets.bottom, 12) + 64 + 16 }]}>
+    <View pointerEvents="box-none" style={[styles.dock, { bottom: insets.bottom + TAB_BAR_HEIGHT + 16 }]}>
       <Pressable accessibilityRole="button" accessibilityLabel="Pass" onPress={tap(onPass)} style={[styles.btn, styles.small, { backgroundColor: "#4B4A5E" }]}>
         <Feather name="x" size={26} color="#FFFFFF" />
       </Pressable>
