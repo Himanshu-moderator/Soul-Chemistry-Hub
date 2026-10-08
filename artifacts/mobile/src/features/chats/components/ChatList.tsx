@@ -2,12 +2,15 @@ import React from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar, TypeBadge } from "@/components/ui";
 import { CONNECTIONS } from "@/data/mockData";
+import { useSoul } from "@/state/SoulContext";
 import { groupedRow } from "@/components/ui/grouped";
 import { useStyles, useTheme } from "@/theme/ThemeProvider";
 import { font } from "@/theme/tokens";
 import type { Colors } from "@/theme/themes";
 
-type Contact = (typeof CONNECTIONS)[number];
+import type { ChatContact } from "./DirectChat";
+
+type Contact = ChatContact;
 
 const PREVIEWS = [
   "means what are u here for? 😅",
@@ -33,7 +36,10 @@ interface Props {
 export function ChatList({ search, onOpen, bottomPadding, header }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
-  const items = CONNECTIONS.map((c, i) => ({ contact: c, preview: PREVIEWS[i % 8], time: TIMES[i % 8], unread: UNREAD[i % 8] })).filter(
+  const soul = useSoul();
+  // People you matched with or whose request was accepted come first, then the sample chats.
+  const fresh = soul.connectedPeople.map((p) => ({ contact: p as Contact, preview: soul.lastMessage(p.id)?.text ?? "Say hi 👋", time: "now", unread: 0 }));
+  const items = [...fresh, ...CONNECTIONS.map((c, i) => ({ contact: c as Contact, preview: PREVIEWS[i % 8], time: TIMES[i % 8], unread: UNREAD[i % 8] }))].filter(
     (x) => !search || x.contact.name.toLowerCase().includes(search.toLowerCase())
   );
 

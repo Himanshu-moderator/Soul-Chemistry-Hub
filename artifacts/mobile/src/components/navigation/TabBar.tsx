@@ -8,6 +8,7 @@ import { font } from "@/theme/tokens";
 import { useStyles, useTheme } from "@/theme/ThemeProvider";
 import type { Colors } from "@/theme/themes";
 import { useApp } from "@/state/AppContext";
+import { useSoul } from "@/state/SoulContext";
 
 // The parts of the tab-bar props used here (the navigation package is only a
 // transitive dependency of expo-router, so it can't be imported directly).
@@ -47,7 +48,9 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const { mode } = useApp();
-  const unread = mode === "demo" ? 6 : 0; // sample inbox only exists in the demo
+  const { received } = useSoul();
+  // The sample inbox only exists in the demo; pending requests count everywhere.
+  const unread = (mode === "demo" ? 6 : 0) + received.length;
 
   const press = (route: TabRoute, focused: boolean) => {
     Haptics.selectionAsync();

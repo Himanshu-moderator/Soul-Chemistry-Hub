@@ -82,3 +82,11 @@ artifacts/mobile/
 ## The shared sky
 
 The star field is drawn **once**, behind the whole navigator (`SkyHost` in `src/app/_layout.tsx`). Screens never draw their own background: they wrap themselves in `<Sky variant="subtle">` (or `"starry"` for forms, `"full"` for the welcome screen) and stay transparent. Cards and the tab bar use **opaque** surface colours (`theme/themes.ts`), so stars never show through text. To change the sky, edit `components/cosmic/CosmicBackground.tsx`.
+
+## Soul deck, requests and Superchat
+
+- `features/soul`: the Soul tab is a deck of people (`data/people.ts`). `ProfileCard` is a full-screen photo you scroll down for chemistry, what they want, about them and their interests; `ActionDock` holds the floating pass / message / like buttons; `MessageSheet` is the first-message box.
+- `state/SoulContext.tsx` owns everything that follows: passing, liking, the Requests lists, the three-message limit before someone accepts, Superchat, and the resulting chat threads. It is saved per demo or account on the device (the people are samples, there is no matching backend).
+- Rules: liking someone who already liked you is an instant match. Writing to someone who has not accepted is capped at 3 messages (`FIRST_MESSAGE_LIMIT`). Superchat (`SUPERCHAT_COST` coins, spent through `AppContext.spendCoins`) skips the request and unlocks unlimited chat. In an account, coins are spent by the `spend_coins` function (`supabase/migrations/20261008000000_spend_coins.sql`), so the balance cannot be edited from the app.
+- `features/chats/components/RequestsList.tsx` is the Requests section of Chats (Received / Sent). `DirectChat` serves both the sample contacts and people from the deck.
+- Photos: `SoulPerson.photos` takes image URLs; while empty, `PersonPhoto` draws an illustrated portrait.

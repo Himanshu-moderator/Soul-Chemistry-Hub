@@ -130,6 +130,8 @@ type AppContextType = {
   dailyCheckinDone: boolean;
   claimCheckin: (reward: number) => Promise<void>;
   buyCoins: (amount: number) => Promise<void>;
+  // Spends coins if there are enough; resolves false if there are not.
+  spendCoins: (amount: number) => Promise<boolean>;
   followedPeople: string[];
   toggleFollow: (id: string) => void;
   joinedCommunities: string[];
@@ -143,6 +145,8 @@ type AppContextType = {
   trialActive: boolean;
   // Wipes the demo's saved data and returns to a fresh start.
   resetDemo: () => Promise<void>;
+  // Bumps every time the demo is reset, so other saved state (the Soul deck) can reset too.
+  resetTick: number;
 };
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -385,6 +389,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [account, applyRow, update]
   );
 
+  const spendCoins = useCallback(
+    async (amount: number) => {
+      if (latest.current.coins < amount) return false;
+      if (account) {
+        const { data, error } = await supabase!.rpc("spend_coins", { amount });
+        if (error || !data) return false;
+        applyRow(data as ProfileRow);
+        return true;
+      }
+      const cur = latest.current;
+      update({ coins: cur.coins - amount, profile: { ...cur.profile, coins: cur.coins - amount } });
+      return true;
+    },
+    [account, applyRow, update]
+  );
+
   const startTrial = useCallback(async () => {
     if (account) {
       const { data, error } = await supabase!.rpc("start_trial");
@@ -394,7 +414,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     update({ isPremium: true, trialActive: true });
   }, [account, applyRow, update]);
 
+  const [resetTick, setResetTick] = useState(0);
   const resetDemo = useCallback(async () => {
+    setResetTick((n) => n + 1);
     const fresh = demoDefaults();
     latest.current = fresh;
     setState(fresh);
@@ -424,6 +446,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dailyCheckinDone: state.lastCheckinDate === today,
         claimCheckin,
         buyCoins,
+        spendCoins,
         followedPeople: state.followedPeople,
         toggleFollow,
         joinedCommunities: state.joinedCommunities,
@@ -436,6 +459,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         startTrial,
         trialActive: state.trialActive,
         resetDemo,
+        resetTick,
       }}
     >
       {children}
