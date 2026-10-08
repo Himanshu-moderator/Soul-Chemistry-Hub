@@ -132,17 +132,17 @@ const RAW: Raw[] = [
 // mock-ups) and everyday scenes from picsum.photos for the cover and the rest of the
 // gallery. They are random stand-ins, not these characters' real photos: replace the
 // URLs with real uploads when there is a backend.
-const face = (img: number) => `https://i.pravatar.cc/800?img=${img}`;
+const face = (img: number | string) => (typeof img === "string" ? img : `https://i.pravatar.cc/800?img=${img}`);
 const scene = (seed: string, w: number, h: number) => `https://picsum.photos/seed/pdb-${seed}/${w}/${h}`;
 
 interface Extra {
-  img: number; // which pravatar face
+  img: number | string; // a pravatar face number, or a full image URL
   idols: [string, string][];
   thoughts: string[];
 }
 
 const EXTRA: Record<string, Extra> = {
-  s1: { img: 25, idols: [["Dr. Kalpana Chawla", "🚀"], ["Marie Curie", "🔬"], ["Socrates", "🏛️"]], thoughts: ["Anatomy exams taught me patience more than any book.", "Is it normal to feel calmest at 3 a.m.?"] },
+  s1: { img: "https://images.pexels.com/photos/37798732/pexels-photo-37798732.jpeg?auto=compress&cs=tinysrgb&w=900&h=900&fit=crop&crop=faces", idols: [["Dr. Kalpana Chawla", "🚀"], ["Marie Curie", "🔬"], ["Socrates", "🏛️"]], thoughts: ["Anatomy exams taught me patience more than any book.", "Is it normal to feel calmest at 3 a.m.?"] },
   s2: { img: 12, idols: [["Elon Musk", "🛰️"], ["Zakir Khan", "🎤"], ["Steve Jobs", "🍎"]], thoughts: ["Pitched a terrible idea today. 10/10 would pitch again.", "Debate me about pineapple on pizza."] },
   s3: { img: 32, idols: [["Maya Angelou", "🪶"], ["Haruki Murakami", "📚"], ["Ruskin Bond", "🏔️"]], thoughts: ["Rain plus chai plus a good book is a complete personality.", "Some silences are the loudest kind of honest."] },
   s4: { img: 59, idols: [["Nikola Tesla", "⚡"], ["Magnus Carlsen", "♟️"], ["Ratan Tata", "🏭"]], thoughts: ["Optimising my morning routine again. Send help.", "Best code I wrote this year was a delete."] },
