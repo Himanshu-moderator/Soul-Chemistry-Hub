@@ -93,3 +93,14 @@ EXPO_PUBLIC_GEMINI_API_KEY=your-key
 - When it is allowed to finish (thresholds): `src/lib/persona/typerProtocol.ts`
 - The questionnaire items: `src/lib/mbti/questions.ts`
 - Which models/providers are used: `src/services/ai/`
+
+## Measuring accuracy (`scripts/simulate-interviews.cjs`)
+
+One model plays PersonaAI exactly as the app does; another plays a person of a known type. The script compares the type PersonaAI ends on with the type it started from and reports how many answers it needed.
+
+```bash
+cd artifacts/mobile
+GEMINI_KEY=your-key node scripts/simulate-interviews.cjs --save   # 8 types; --all for 16
+```
+
+PowerShell: `$env:GEMINI_KEY="your-key"; node scripts/simulate-interviews.cjs`. The key is read from the environment only. Run it after changing `typerPrompt.ts` or `typerProtocol.ts`.
