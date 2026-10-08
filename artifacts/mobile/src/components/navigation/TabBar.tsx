@@ -21,6 +21,9 @@ type TabBarProps = {
   };
 };
 
+// Height of the bar itself (without the bottom safe area). Screens use it to leave room.
+export const TAB_BAR_HEIGHT = 64;
+
 // Order is the order on screen; "soul" is the raised centre button.
 const TABS = [
   { name: "index", label: "Explore" },
@@ -59,10 +62,9 @@ export function TabBar({ state, navigation }: TabBarProps) {
   };
 
   return (
-    <View pointerEvents="box-none" style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <View style={styles.bar}>
-        {/* Solid, not blurred: a see-through bar lets list text show through it and looks cluttered. */}
-        <View style={[StyleSheet.absoluteFill, styles.barBg]} />
+    <View pointerEvents="box-none" style={styles.wrap}>
+      {/* A solid panel fixed to the bottom edge: nothing shows through or below it. */}
+      <View style={[styles.bar, { height: TAB_BAR_HEIGHT + insets.bottom, paddingBottom: insets.bottom + 9 }]}>
 
         {TABS.map((tab) => {
           const route = state.routes.find((r) => r.name === tab.name);
@@ -104,39 +106,36 @@ export function TabBar({ state, navigation }: TabBarProps) {
 
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
-    wrap: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 14 },
+    wrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
     bar: {
       flexDirection: "row",
       alignItems: "flex-end",
-      height: 64,
-      borderRadius: 26,
       overflow: "visible",
-      paddingBottom: 9,
-      borderWidth: 1,
-      borderColor: c.border,
+      backgroundColor: c.surfaceSolid,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
     },
-    barBg: { backgroundColor: c.surfaceSolid, borderRadius: 26 },
     item: { flex: 1, alignItems: "center", justifyContent: "center", gap: 4, height: "100%", paddingTop: 6 },
     label: { fontFamily: font.medium, fontSize: 10.5 },
     centerSlot: { flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 4 },
     orbGlow: {
       position: "absolute",
       bottom: 14,
-      width: 70,
-      height: 70,
-      borderRadius: 35,
+      width: 64,
+      height: 64,
+      borderRadius: 32,
       backgroundColor: c.accent,
-      opacity: 0.35,
+      opacity: 0.18,
     },
     orb: {
       width: 52,
       height: 52,
       borderRadius: 26,
-      marginTop: -20,
+      marginTop: -16,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 3,
-      borderColor: c.bgBottom,
+      borderColor: c.surfaceSolid,
     },
     orbRing: {
       position: "absolute",

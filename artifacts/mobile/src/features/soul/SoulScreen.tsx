@@ -11,6 +11,7 @@ import { useSoul } from "@/state/SoulContext";
 import { useStyles, useTheme } from "@/theme/ThemeProvider";
 import { font, type } from "@/theme/tokens";
 import type { Colors } from "@/theme/themes";
+import { TAB_BAR_HEIGHT } from "@/components/navigation/TabBar";
 import { ActionDock } from "./components/ActionDock";
 import { MessageSheet } from "./components/MessageSheet";
 import { ProfileCard } from "./components/ProfileCard";
@@ -62,10 +63,12 @@ export default function SoulScreen() {
     });
   };
 
-  const bottomInset = Math.max(insets.bottom, 12) + 64 + 120;
+  // Room under the profile for the floating buttons (the tab bar is accounted for separately).
+  const bottomInset = 100;
 
   return (
     <Sky variant="subtle">
+      <View style={{ flex: 1, paddingBottom: insets.bottom + TAB_BAR_HEIGHT }}>
       {person ? (
         <>
           <Animated.View
@@ -99,8 +102,10 @@ export default function SoulScreen() {
         </View>
       )}
 
+      </View>
+
       {toast && (
-        <View pointerEvents="none" style={[styles.toast, { bottom: Math.max(insets.bottom, 12) + 64 + 100 }]}>
+        <View pointerEvents="none" style={[styles.toast, { bottom: insets.bottom + TAB_BAR_HEIGHT + 100 }]}>
           <Text style={styles.toastText}>{toast}</Text>
         </View>
       )}

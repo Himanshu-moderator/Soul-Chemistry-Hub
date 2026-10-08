@@ -12,6 +12,7 @@ import { useStyles, useTheme } from "@/theme/ThemeProvider";
 import { font, radius, type } from "@/theme/tokens";
 import { withAlpha, type Colors } from "@/theme/themes";
 import { InterestGrid } from "./InterestGrid";
+import { TAB_BAR_HEIGHT } from "@/components/navigation/TabBar";
 import { PersonPhoto } from "./PersonPhoto";
 
 interface Props {
@@ -35,7 +36,8 @@ export function ProfileCard({ person, bottomInset, topAction }: Props) {
   const count = Math.max(person.photos.length, 1);
 
   const pct = chemistryBetween(profile.mbti, person.mbti, person.name.length);
-  const heroH = Math.max(480, height);
+  // The photo fills the screen above the tab bar.
+  const heroH = Math.max(480, height - insets.bottom - TAB_BAR_HEIGHT);
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset }}>
@@ -45,8 +47,8 @@ export function ProfileCard({ person, bottomInset, topAction }: Props) {
         {/* tap the left or right half to flip through photos */}
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           <View style={styles.tapRow}>
-            <Pressable accessibilityLabel="Previous photo" style={{ flex: 1 }} onPress={() => setPhoto((p) => Math.max(0, p - 1))} />
-            <Pressable accessibilityLabel="Next photo" style={{ flex: 1 }} onPress={() => setPhoto((p) => Math.min(count - 1, p + 1))} />
+            <Pressable accessibilityLabel="Previous photo" style={{ flex: 1 }} onPress={() => setPhoto((p) => (p - 1 + count) % count)} />
+            <Pressable accessibilityLabel="Next photo" style={{ flex: 1 }} onPress={() => setPhoto((p) => (p + 1) % count)} />
           </View>
         </View>
         <LinearGradient colors={["rgba(6,5,15,0.55)", "rgba(6,5,15,0)"]} style={styles.topScrim} pointerEvents="none" />
@@ -152,11 +154,11 @@ const makeStyles = (c: Colors) =>
     hero: { borderBottomLeftRadius: 30, borderBottomRightRadius: 30, overflow: "hidden", backgroundColor: c.surface },
     tapRow: { flex: 1, flexDirection: "row" },
     topScrim: { position: "absolute", left: 0, right: 0, top: 0, height: 140 },
-    bottomScrim: { position: "absolute", left: 0, right: 0, bottom: 0, height: 360 },
+    bottomScrim: { position: "absolute", left: 0, right: 0, bottom: 0, height: 320 },
     topBar: { position: "absolute", left: 0, right: 0, top: 0, paddingHorizontal: 16, gap: 12 },
     segments: { flexDirection: "row", gap: 5 },
     segment: { flex: 1, height: 3, borderRadius: 2 },
-    identity: { position: "absolute", left: 20, right: 20, bottom: 190, gap: 6 },
+    identity: { position: "absolute", left: 20, right: 20, bottom: 112, gap: 6 },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 4 },
     chip: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(10,8,24,0.62)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
     chipText: { color: "#FFFFFF", fontFamily: font.medium, fontSize: 12 },
