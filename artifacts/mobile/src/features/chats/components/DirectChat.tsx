@@ -1,17 +1,26 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Modal, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatShell } from "@/components/chat/ChatShell";
 import { ChatThemeSheet } from "@/components/chat/ChatThemeSheet";
 import type { ChatMessage } from "@/components/chat/MessageBubble";
 import { Avatar } from "@/components/ui";
 import { CONNECTIONS } from "@/data/mockData";
+import { FIRST_MESSAGE_LIMIT, SUPERCHAT_COST, useSoul } from "@/state/SoulContext";
 import { font } from "@/theme/tokens";
 
-type Contact = (typeof CONNECTIONS)[number];
+// Anyone with these fields can be chatted with: the sample contacts and the people
+// from the Soul deck.
+export interface ChatContact {
+  id: string;
+  name: string;
+  mbti: string;
+  isOnline: boolean;
+  lastSeen: string;
+}
 
 interface Props {
-  contact: Contact | null;
+  contact: ChatContact | null;
   onClose: () => void;
 }
 
@@ -21,38 +30,34 @@ const OPENING: ChatMessage[] = [
   { id: "o3", mine: false, text: "Same here 😄 Do you think we're compatible?", at: "2:32 PM" },
 ];
 
-const REPLIES = ["Haha, I was thinking the same thing 😄", "Tell me more!", "That's a great point.", "Ha, fair enough 🙌", "Love that. Talk soon!"];
-
-// A direct chat with one of the sample contacts. Whatever you send gets a
-// friendly scripted reply (real conversations happen in communities).
+// A direct chat. With a connection it is unlimited; with someone who has not accepted
+// yet you can send up to three messages, or start a Superchat with coins to skip the wait.
 export function DirectChat({ contact, onClose }: Props) {
-  const [sent, setSent] = useState<Record<string, ChatMessage[]>>({});
+  const soul = useSoul();
   const [text, setText] = useState("");
-  const [typing, setTyping] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   if (!contact) return null;
 
-  const messages = [...OPENING, ...(sent[contact.id] ?? [])];
-  const now = () => new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const first = contact.name.split(" ")[0];
+  const sample = CONNECTIONS.some((c) => c.id === contact.id);
+  const messages = [...(sample ? OPENING : []), ...soul.threadFor(contact.id)];
+  const pending = soul.status(contact.id) === "pending";
+  const left = soul.messagesLeft(contact.id);
 
   const send = () => {
-    const body = text.trim();
-    if (!body) return;
-    const id = contact.id;
-    setSent((cur) => ({ ...cur, [id]: [...(cur[id] ?? []), { id: `me-${Date.now()}`, mine: true, text: body, at: now() }] }));
-    setText("");
-    setTyping(id);
-    timers.current.push(
-      setTimeout(() => {
-        const reply: ChatMessage = { id: `them-${Date.now()}`, mine: false, text: REPLIES[Math.floor(Math.random() * REPLIES.length)], at: now() };
-        setSent((cur) => ({ ...cur, [id]: [...(cur[id] ?? []), reply] }));
-        setTyping((t) => (t === id ? null : t));
-      }, 1300)
-    );
+    setError(null);
+    const r = soul.send(contact.id, text);
+    if (r.ok) setText("");
+    else if (r.reason === "limit") setError(`You have used your ${FIRST_MESSAGE_LIMIT} first messages. Wait for ${first} to accept, or start a Superchat.`);
+  };
+
+  const superchat = async () => {
+    setError(null);
+    const r = await soul.superchat(contact.id, text);
+    if (r.ok) setText("");
+    else setError("Not enough coins for a Superchat.");
   };
 
   return (
@@ -71,13 +76,27 @@ export function DirectChat({ contact, onClose }: Props) {
         value={text}
         onChange={setText}
         onSend={send}
-        placeholder={`Message ${contact.name.split(" ")[0]}`}
+        placeholder={`Message ${first}`}
+        error={error}
+        empty={pending ? <Text style={styles.hint}>Say hello. {first} will see it with your request.</Text> : null}
         footer={
-          typing === contact.id ? (
-            <View style={styles.typing}>
-              <Text style={styles.typingText}>{contact.name.split(" ")[0]} is typing…</Text>
-            </View>
-          ) : null
+          <View style={{ gap: 8 }}>
+            {soul.typing(contact.id) && (
+              <View style={styles.typing}>
+                <Text style={styles.typingText}>{first} is typing…</Text>
+              </View>
+            )}
+            {pending && (
+              <View style={styles.banner}>
+                <Text style={styles.bannerText}>
+                  {left > 0 ? `${first} has not accepted yet. ${left} of ${FIRST_MESSAGE_LIMIT} first messages left.` : `${first} has not accepted yet.`}
+                </Text>
+                <Pressable accessibilityRole="button" onPress={superchat} style={styles.bannerBtn}>
+                  <Text style={styles.bannerBtnText}>Superchat · {SUPERCHAT_COST} coins</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
         }
       />
       <ChatThemeSheet visible={themeOpen} onClose={() => setThemeOpen(false)} />
@@ -88,4 +107,9 @@ export function DirectChat({ contact, onClose }: Props) {
 const styles = StyleSheet.create({
   typing: { paddingTop: 8, paddingLeft: 4 },
   typingText: { color: "rgba(244,243,250,0.55)", fontFamily: font.regular, fontSize: 12.5 },
+  hint: { color: "rgba(244,243,250,0.55)", fontFamily: font.regular, fontSize: 14, textAlign: "center" },
+  banner: { marginTop: 8, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 16, padding: 12, gap: 8, alignItems: "center" },
+  bannerText: { color: "rgba(244,243,250,0.7)", fontFamily: font.regular, fontSize: 13, textAlign: "center" },
+  bannerBtn: { backgroundColor: "#E7B341", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
+  bannerBtnText: { color: "#1B1100", fontFamily: font.semibold, fontSize: 13 },
 });

@@ -19,6 +19,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 
 import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
 import { SplashOverlay } from "@/components/cosmic/SplashOverlay";
+import { SoulProvider } from "@/state/SoulContext";
 import { SkyHost, SkyProvider } from "@/components/cosmic/Sky";
 import { RouteGate } from "@/components/navigation/RouteGate";
 import { AppProvider } from "@/state/AppContext";
@@ -85,6 +86,7 @@ export default function RootLayout() {
                   <KeyboardProvider>
                     <StatusBar style="light" />
                     <WebFrame>
+                      <SoulProvider>
                       <NavigationTheme value={navigationTheme}>
                       <SkyProvider>
                       <SkyHost active={skyActive} />
@@ -98,6 +100,7 @@ export default function RootLayout() {
                       <RouteGate />
                       </SkyProvider>
                       </NavigationTheme>
+                      </SoulProvider>
                       {intro && <SplashOverlay onFadeStart={startSky} onDone={finishIntro} />}
                     </WebFrame>
                   </KeyboardProvider>

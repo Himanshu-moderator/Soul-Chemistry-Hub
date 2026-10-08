@@ -78,3 +78,18 @@ export function bigFiveFor(mbti: string) {
     N: 50,
   };
 }
+
+// An illustrative chemistry score between two types (0 to 100). Same rule of thumb
+// as COMPATIBLE_TYPES: the two listed pairings score highest, the "opposite" type is
+// the complementary match, anything else scales with how many letters you share.
+// `salt` (e.g. a name length) nudges equal scores apart so the deck isn't uniform.
+export function chemistryBetween(mine: string, theirs: string, salt = 0): number {
+  if (!mine || !theirs) return 70;
+  const [first, second] = COMPATIBLE_TYPES[mine] ?? [];
+  if (theirs === first) return 94;
+  if (theirs === second) return 90;
+  const opposite = mine.split("").map((c) => FLIP[c] ?? c).join("");
+  if (theirs === opposite) return 86;
+  const shared = mine.split("").filter((c, i) => c === theirs[i]).length;
+  return 62 + shared * 6 + (salt % 5);
+}
