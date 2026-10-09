@@ -1,0 +1,72 @@
+{
+  "guess": "INFP",
+  "answers": 5,
+  "turn": {
+    "message": "I really enjoyed our chat and have a wonderfully clear picture of how you navigate the world. Thank you for sharing your thoughts with me!",
+    "axes": {
+      "EI": {
+        "lean": "I",
+        "confidence": 90,
+        "evidence": "Needs quiet time alone to process and recharge after dealing with people."
+      },
+      "SN": {
+        "lean": "N",
+        "confidence": 90,
+        "evidence": "Gravitates toward deep symbolism, metaphors, and abstract human themes."
+      },
+      "TF": {
+        "lean": "F",
+        "confidence": 90,
+        "evidence": "Agonizes over causing pain and softens feedback to protect feelings."
+      },
+      "JP": {
+        "lean": "P",
+        "confidence": 85,
+        "evidence": "Prefers to leave things open and flexible rather than following rigid schedules."
+      }
+    },
+    "ready": true
+  },
+  "transcript": [
+    {
+      "from": "PersonaAI",
+      "text": "Hi there! Let's figure out your personality style through a quick chat. To start off, after a long, demanding week, what does your ideal evening look like, and why?"
+    },
+    {
+      "from": "INFP",
+      "text": "Honestly, my absolute ideal evening is just curling up on the living room floor with a stack of poetry books and a really warm cup of chamomile tea. I really need that quiet time alone to process everything in my head and let my imagination wander after dealing with people all week."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "That sounds wonderfully peaceful. When your mind wanders like that with your poetry, what kind of themes or imagery usually capture your attention?"
+    },
+    {
+      "from": "INFP",
+      "text": "I always gravitate toward things with deep symbolism, like old overgrown gardens or changing seasons that reflect human grief and growth. It's just so comforting to get lost in metaphors that capture the bittersweet, fleeting nature of life."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "I love how vivid that imagery is. Tell me about a time you had to give someone news or feedback they wouldn't like. What went through your mind, and what did you actually do?"
+    },
+    {
+      "from": "INFP",
+      "text": "Oh, I agonize over those moments for days because I really hate causing anyone pain or starting a harsh conflict. Last month, when I had to tell a friend I couldn't collaborate on their art project, I ended up writing a long, rambling message and softening every single sentence until the actual \"no\" was almost entirely buried."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "That sounds like it was really tough to balance. Walk me through how you handled your last big deadline, trip, or move."
+    },
+    {
+      "from": "INFP",
+      "text": "Oh, don't even get me started on deadlines—I am the queen of putting things off until the absolute last minute because I get so distracted by ideas. Last month when I had to finish writing a personal essay, I stared at a blank screen for three days, reorganized my bookshelf twice, and then frantically typed the whole thing out at 3 AM fueled by panic and playlist inspiration."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "When you have a big project or task ahead of you, do you usually like to have a clear plan or schedule mapped out beforehand, or do you prefer to just see where the flow takes you?"
+    },
+    {
+      "from": "INFP",
+      "text": "Rigid schedules just feel way too suffocating for me, so I much prefer to leave things open and flexible so I can follow whatever creative spark hits me in the moment. If I try to map out every hour, I instantly feel boxed in and lose all motivation to actually start."
+    }
+  ]
+}

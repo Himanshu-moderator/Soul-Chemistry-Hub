@@ -1,0 +1,72 @@
+{
+  "guess": "ENTP",
+  "answers": 5,
+  "turn": {
+    "message": "I've really enjoyed our chat and have a wonderfully clear picture of how your mind works now!",
+    "axes": {
+      "EI": {
+        "lean": "E",
+        "confidence": 85,
+        "evidence": "gains energy from crowds, loves debate and interaction"
+      },
+      "SN": {
+        "lean": "N",
+        "confidence": 85,
+        "evidence": "focuses on abstract schemes, hypotheticals, and big-picture ideas"
+      },
+      "TF": {
+        "lean": "T",
+        "confidence": 75,
+        "evidence": "uses objective logic and enjoys intellectual sparring"
+      },
+      "JP": {
+        "lean": "P",
+        "confidence": 85,
+        "evidence": "wings itineraries, leaves things to the last minute, and embraces spontaneity"
+      }
+    },
+    "ready": true
+  },
+  "transcript": [
+    {
+      "from": "PersonaAI",
+      "text": "Hi there! Let's figure out how your mind works through a quick chat. To start off, tell me about the last time you were around a lot of people for a long time. How did you feel afterwards?"
+    },
+    {
+      "from": "ENTP",
+      "text": "Oh man, last weekend's massive vintage street market was total sensory overload, but I came home buzzing with about twelve new business ideas and a half-built website. By Sunday night I was utterly exhausted and had completely neglected my laundry, but meeting all those eccentric antique dealers completely rewired my brain for the coming week."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "It sounds like those antique dealers really sparked your imagination! When your mind wanders like that and nothing is demanding your attention, what do you usually find yourself thinking about?"
+    },
+    {
+      "from": "ENTP",
+      "text": "Usually, I'm plotting some ridiculous, overly ambitious scheme—like converting an old shipping container into a pop-up espresso bar and indie bookstore combo—or playing devil's advocate in my head about a totally absurd hypothetical debate. Right now, I'm legitimately trying to figure out if society could function entirely on barter systems if Wi-Fi permanently went down."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "I love how far those thoughts travel! Tell me about a time you had to give someone news or feedback they really wouldn't like. What went through your mind and what did you actually do?"
+    },
+    {
+      "from": "ENTP",
+      "text": "I spent the whole morning drafting a bulletproof pro-con list to soften the blow before casually dropping it over tacos an hour before the deadline. Sure, the logic was airtight and completely objective, but honestly, I mostly just enjoyed the intellectual sparring match when they inevitably tried to push back."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "You really leaned into the logic and even enjoyed the sparring match! Walk me through how you handled your last big deadline, trip, or major project."
+    },
+    {
+      "from": "ENTP",
+      "text": "Oh, absolute chaos, naturally—I spent the entire month brainstorming three different backup plans instead of actually writing the report, and then somehow banged out the final draft at 3 AM fueled entirely by cold brew and adrenaline. It always somehow works out in the end, though I really should learn to start these things earlier."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "It always seems to come together in the end when you run on adrenaline! Tell me about the last time you had to plan a trip or a major outing with friends. How did you actually organise it?"
+    },
+    {
+      "from": "ENTP",
+      "text": "I didn't actually book a single thing until two hours before we left for the airport, but I *did* spend three days aggressively debating flight routes with my buddy just for the intellectual thrill of it. We ended up winging the entire itinerary, and though we missed our first train, stumbling into that underground jazz club because we got lost was totally worth the panic."
+    }
+  ]
+}

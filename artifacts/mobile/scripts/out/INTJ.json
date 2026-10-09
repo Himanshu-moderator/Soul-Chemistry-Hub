@@ -1,0 +1,72 @@
+{
+  "guess": "INTJ",
+  "answers": 5,
+  "turn": {
+    "message": "Thank you so much for sharing all of that with me. I now have a really clear picture of how you approach things!",
+    "axes": {
+      "EI": {
+        "lean": "I",
+        "confidence": 90,
+        "evidence": "prefers a soundproofed home office with zero foot traffic and complete absence of noise"
+      },
+      "SN": {
+        "lean": "N",
+        "confidence": 80,
+        "evidence": "focuses on long-term scaling, system workflows, and strategic models"
+      },
+      "TF": {
+        "lean": "T",
+        "confidence": 85,
+        "evidence": "delivers direct, objective feedback tied strictly to metrics, avoiding emotional framing"
+      },
+      "JP": {
+        "lean": "J",
+        "confidence": 90,
+        "evidence": "maps out master spreadsheets months in advance and executes backup protocols"
+      }
+    },
+    "ready": true
+  },
+  "transcript": [
+    {
+      "from": "PersonaAI",
+      "text": "Hi there! I'd love to figure out your personality type through a quick chat. To start, when your mind wanders and nothing demands your attention, what do you find yourself thinking about?"
+    },
+    {
+      "from": "INTJ",
+      "text": "Usually I’m mapping out structural changes for my investment portfolio or optimizing a workflow for a side project. I rarely waste mental bandwidth on daydreams; I’d rather analyze how a current system will scale five years from now."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "It sounds like you love focusing on long-term strategy and systems. Tell me about a time you had to give someone feedback they wouldn't like. What went through your mind and what did you actually do?"
+    },
+    {
+      "from": "INTJ",
+      "text": "I kept it brief, objective, and tied directly to the metrics they missed. Emotional framing just wastes everyone's time, so I outlined the required course correction and let them execute it."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "You value keeping things objective and direct. Tell me about the last time you spent a long time around a large group of people. How did you feel afterward?"
+    },
+    {
+      "from": "INTJ",
+      "text": "Drained, honestly. I spent the weekend at an industry conference and needed a full day of complete silence at home just to reset my baseline."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "It's common to need that quiet reset after big events. Walk me through how you handled your last major travel trip or project deadline from start to finish."
+    },
+    {
+      "from": "INTJ",
+      "text": "I mapped out every logistical dependency in a master spreadsheet months in advance so nothing was left to chance. When delays happened on day two, I just executed the backup protocol I'd already planned for."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "You are well-prepared for any logistical shift. Tell me about a specific place or space you love spending time in: what physical details or elements of it stay with you when you leave?"
+    },
+    {
+      "from": "INTJ",
+      "text": "I prefer my home office: soundproofed walls, a minimalist setup with dual monitors, and zero foot traffic. The key detail is the complete absence of noise and interruptions, which makes it the only place I can actually think straight."
+    }
+  ]
+}

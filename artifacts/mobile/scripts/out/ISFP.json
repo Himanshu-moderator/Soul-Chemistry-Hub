@@ -1,0 +1,72 @@
+{
+  "guess": "ISFP",
+  "answers": 5,
+  "turn": {
+    "message": "Thank you so much for sharing those wonderful stories. I now have a clear and complete picture of how you navigate the world!",
+    "axes": {
+      "EI": {
+        "lean": "I",
+        "confidence": 85,
+        "evidence": "Seeks solitude to recharge, avoids loud spaces, and needs personal quiet time."
+      },
+      "SN": {
+        "lean": "S",
+        "confidence": 85,
+        "evidence": "Focuses heavily on concrete physical details, sensory textures, and hands-on materials."
+      },
+      "TF": {
+        "lean": "F",
+        "confidence": 80,
+        "evidence": "Prioritizes relational warmth, kindness, and personal feelings over strict outcomes."
+      },
+      "JP": {
+        "lean": "P",
+        "confidence": 90,
+        "evidence": "Hates strict itineraries, adapts on the fly, and lets materials or the moment guide actions."
+      }
+    },
+    "ready": true
+  },
+  "transcript": [
+    {
+      "from": "PersonaAI",
+      "text": "Hi there! Let's figure out how your mind works through a quick chat. To start off, after a long, demanding week, what does your ideal evening look like, and why?"
+    },
+    {
+      "from": "ISFP",
+      "text": "Honestly, I'd probably just grab my watercolors and paint whatever color catches the light on my living room wall as the sun goes down. There's something so calming about letting the brush move without any real destination in mind. I just want the quiet space to breathe and reset after all that noise."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "Watercolors sound like a wonderful way to unwind in the quiet. When your mind wanders like that with no real destination, what kind of things do you usually find yourself thinking about?"
+    },
+    {
+      "from": "ISFP",
+      "text": "Oh, I rarely think in words when I'm painting. It's more about the feeling of cool water on the paper, or the way two colors bleed into each other if I tilt the board just right. I might notice a stray dust mote floating in the last beam of sunlight and just watch it drift for a long while."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "You notice such vivid little physical details in the moment. Tell me about a time you had to give someone feedback or news they really wouldn't like. What went through your mind and what did you actually do?"
+    },
+    {
+      "from": "ISFP",
+      "text": "Oh, I hate doing that—my stomach just ties into knots. Once, I had to tell a friend I couldn't help them move on a weekend I had finally cleared for myself. Instead of making up some excuse, I ended up just baking them a double batch of cinnamon rolls and dropping them off with a warm hug, hoping the quiet gesture would say what I was too shy to articulate."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "Baking cinnamon rolls to soften the blow shows how deeply you care about their feelings and the relationship. When you have a major upcoming project or a trip, how do you usually prepare for it?"
+    },
+    {
+      "from": "ISFP",
+      "text": "I usually just throw a few soft shirts and my sketchbook into a bag an hour before I need to leave. I hate strict itineraries, so I'd rather just wander down whatever cobbled street looks interesting once I actually get there."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "Pack lightly and follow the cobblestone streets wherever they lead sounds wonderfully free. Tell me about a time when you were working on something and realized your initial approach wasn't working. What did you do next?"
+    },
+    {
+      "from": "ISFP",
+      "text": "I was trying to build a wooden birdhouse last spring, but the cedar kept splitting where I'd measured it out. Instead of forcing it, I just set the saw down, walked out to the garden, and ended up spending the whole afternoon weaving a little nest bowl out of dried grapevine instead. Sometimes you just have to let the material tell you what it wants to be."
+    }
+  ]
+}

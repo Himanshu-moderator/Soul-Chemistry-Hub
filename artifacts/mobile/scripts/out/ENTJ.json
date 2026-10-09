@@ -1,0 +1,72 @@
+{
+  "guess": "ENTJ",
+  "answers": 5,
+  "turn": {
+    "message": "It has been wonderful getting to know how you operate! I now have a clear and complete picture of your style.",
+    "axes": {
+      "EI": {
+        "lean": "E",
+        "confidence": 85,
+        "evidence": "energized by large group environments and high-capacity social settings"
+      },
+      "SN": {
+        "lean": "N",
+        "confidence": 75,
+        "evidence": "looks at overarching concepts, blueprints, and end goals before touching the details"
+      },
+      "TF": {
+        "lean": "T",
+        "confidence": 80,
+        "evidence": "relies on direct numbers, metrics, and fixing bottlenecks efficiently"
+      },
+      "JP": {
+        "lean": "J",
+        "confidence": 85,
+        "evidence": "uses master schedules, blueprints, and immediate resource reallocation"
+      }
+    },
+    "ready": true
+  },
+  "transcript": [
+    {
+      "from": "PersonaAI",
+      "text": "Hi there! Let's figure out how your mind works through a quick chat. To start, tell me about the last time you were around a lot of people for a long time, and how you felt afterwards."
+    },
+    {
+      "from": "ENTJ",
+      "text": "Last weekend I hosted a thirty-person strategy dinner to map out our Q3 product rollout, and honestly, I felt completely energized afterward. It was loud, chaotic at times, and hyper-productive because we locked down all the final deliverables before dessert even arrived. I thrive on that kind of momentum and high-capacity environment."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "It sounds like you love high-energy momentum! When your mind wanders and nothing is demanding your attention, what do you usually find yourself thinking about?"
+    },
+    {
+      "from": "ENTJ",
+      "text": "I'm usually mapping out next month's travel logistics or calculating how to shave two days off my current home renovation timeline. Honestly, my brain hates sitting idle, so even downtime turns into an optimization puzzle for my upcoming projects."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "Optimization puzzles are fun! Tell me about a time you had to give someone feedback they wouldn't like, and what went through your mind when you did it."
+    },
+    {
+      "from": "ENTJ",
+      "text": "I had to pull a lead developer aside last month because his team missed two consecutive sprint deadlines, and I just laid out the numbers directly so there was no room for debate. I was thinking about how to fix the bottleneck immediately without wasting time on fluff, because protecting the overall timeline is what matters most."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "You really focus on objective metrics and keeping the timeline on track. Walk me through what happens to your day when plans suddenly change unexpectedly."
+    },
+    {
+      "from": "ENTJ",
+      "text": "I immediately pivot to damage control, pull up my master schedule, and reassign resources to plug the new gap before it snowballs. Wasting time complaining about a monkey wrench is pointless when you can just redesign the blueprint and charge ahead."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "When you're trying to figure out how a complex physical system or device works, do you prefer to take it apart hands-on to see the pieces, or do you look for an overarching pattern or concept first?"
+    },
+    {
+      "from": "ENTJ",
+      "text": "I always look at the overarching concept and blueprint first to understand the end goal before I touch a single piece. Once I see how the whole system is supposed to function strategically, taking it apart or building it is just a matter of executing the steps efficiently."
+    }
+  ]
+}
