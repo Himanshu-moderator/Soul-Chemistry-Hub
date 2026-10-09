@@ -34,6 +34,8 @@
 
 ## What it is
 
+> **Case study:** the product thinking behind this build (user research, pain points, personas, requirements) is in [`docs/Pdb-Product-Improvement-Case-Study.pdf`](docs/Pdb-Product-Improvement-Case-Study.pdf).
+
 Personality-type communities (MBTI, Enneagram, Socionics) are large and passionate, but the apps around them are scattered across quizzes, wikis and group chats. Pdb puts them in one place:
 
 1. **Sign up** (or try the demo) and set up a profile.
