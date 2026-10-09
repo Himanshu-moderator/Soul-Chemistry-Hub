@@ -68,6 +68,16 @@ supabase secrets set GEMINI_API_KEY=PASTE_YOUR_KEY_HERE
 supabase functions deploy persona-ai
 ```
 
+No CLI? Store the key in Supabase Vault instead (the function reads it from there when no
+secret is set). In the dashboard SQL editor run:
+
+```sql
+select vault.create_secret('PASTE_YOUR_KEY_HERE', 'GEMINI_API_KEY', 'Gemini key for persona-ai');
+```
+
+The key is read only by the function, through `public.get_gemini_key()`, which only the
+service role may call. Never put it in the repo, `.env` or the app build.
+
 Nothing else: the app calls the function through the Supabase URL and anon key it already
 uses (`artifacts/mobile/.env`).
 

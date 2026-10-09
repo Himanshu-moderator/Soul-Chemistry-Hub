@@ -1,13 +1,23 @@
 // PersonaAI edge function: a thin, safe proxy to Google Gemini.
 //
 // The app sends { system, messages, json, temperature }; this function adds the
-// Gemini API key (a server secret, never shipped in the app) and returns { text }.
-//
-// Setup (see docs/AI.md):
-//   supabase secrets set GEMINI_API_KEY=your-free-key
-//   supabase functions deploy persona-ai
+// Gemini API key and returns { text }. The key never reaches the app. It comes from the
+// GEMINI_API_KEY function secret if one is set, otherwise from Supabase Vault (a secret
+// named GEMINI_API_KEY, read through the service-role-only function public.get_gemini_key).
+// See docs/AI.md.
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+let cachedKey: string | null = Deno.env.get("GEMINI_API_KEY") ?? null;
+
+async function geminiKey(): Promise<string | null> {
+  if (cachedKey) return cachedKey;
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { data } = await admin.rpc("get_gemini_key");
+  cachedKey = typeof data === "string" && data ? data : null;
+  return cachedKey;
+}
+
 // Tried in order: when one is busy (503) or over quota (429) the next is used. The lite model
 // comes first because its free daily quota is far bigger (about 500 requests a day against 20
 // for the full model, as of Oct 2026), and one interview takes about 6 requests.
@@ -36,7 +46,8 @@ const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body)
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return reply({ error: "Use POST" }, 405);
-  if (!GEMINI_API_KEY) return reply({ error: "GEMINI_API_KEY is not set on the server" }, 500);
+  const apiKey = await geminiKey();
+  if (!apiKey) return reply({ error: "The Gemini key is not set on the server" }, 500);
 
   let body: Incoming;
   try {
@@ -70,7 +81,7 @@ Deno.serve(async (req) => {
   for (const model of MODELS) {
     upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: payload,
     });
     if (upstream.ok || ![429, 500, 503, 404].includes(upstream.status)) break;
