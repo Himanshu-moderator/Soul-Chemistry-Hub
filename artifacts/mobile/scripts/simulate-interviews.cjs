@@ -28,7 +28,7 @@ const { execSync } = require("child_process");
 
 const KEY = process.env.GEMINI_KEY;
 // Tried in order; when one is busy (HTTP 503) or rate limited the next one is used.
-const MODELS = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash"];
+const MODELS = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : ["gemini-flash-lite-latest", "gemini-flash-latest"];
 const PAUSE_MS = Number(process.env.PAUSE_MS || 4500);
 
 if (!KEY && !process.argv.includes("--check")) {

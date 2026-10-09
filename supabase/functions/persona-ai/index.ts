@@ -8,8 +8,10 @@
 //   supabase functions deploy persona-ai
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-// Tried in order: when one is busy (503) or over quota (429) the next is used.
-const MODELS = (Deno.env.get("GEMINI_MODELS") ?? "gemini-flash-latest,gemini-flash-lite-latest,gemini-2.5-flash").split(",").map((m) => m.trim());
+// Tried in order: when one is busy (503) or over quota (429) the next is used. The lite model
+// comes first because its free daily quota is far bigger (about 500 requests a day against 20
+// for the full model, as of Oct 2026), and one interview takes about 6 requests.
+const MODELS = (Deno.env.get("GEMINI_MODELS") ?? "gemini-flash-lite-latest,gemini-flash-latest").split(",").map((m) => m.trim());
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
