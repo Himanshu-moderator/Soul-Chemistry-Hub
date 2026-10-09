@@ -80,7 +80,7 @@ A space theme end to end: a living night sky (twinkling and drifting stars, floa
 
 ## Backend
 
-Supabase (Postgres, Auth, Realtime). The schema is one file: [`supabase/migrations/20261007000000_pdb_schema.sql`](supabase/migrations/20261007000000_pdb_schema.sql).
+Supabase (Postgres, Auth, Realtime, Edge Functions, Vault). The schema lives in [`supabase/migrations/`](supabase/migrations), starting with [`20261007000000_pdb_schema.sql`](supabase/migrations/20261007000000_pdb_schema.sql). The live demo is wired to a hosted Supabase project, and PersonaAI runs through the `persona-ai` edge function, which keeps the Gemini key in Vault so it never reaches the browser.
 
 | Table | Purpose |
 | --- | --- |
@@ -98,7 +98,7 @@ Row Level Security is on for every table, and the app only ever uses the public 
 3. In **Authentication → Sign In / Providers → Email**, choose whether to require email confirmation (turning it off makes trying the app quicker).
 4. In **Authentication → URL Configuration**, set the Site URL to where you host the app.
 5. Copy `artifacts/mobile/.env.example` to `artifacts/mobile/.env` and fill in the project URL and anon key (Project Settings → API).
-6. Also run `supabase/migrations/20261008000000_spend_coins.sql` (Superchat), and for the AI deploy the edge function: see [`docs/AI.md`](docs/AI.md).
+6. Run the rest of the files in `supabase/migrations/` in order (Superchat, hardening and the Vault key getter), then deploy the `persona-ai` edge function and store your Gemini key: see [`docs/AI.md`](docs/AI.md).
 
 Without these values the app still works: it shows the demo only.
 
