@@ -118,3 +118,7 @@ EXPO_PUBLIC_GEMINI_API_KEY=your-key
 ```
 
 Then `npx expo start --web`, tap **Try the demo**, and choose **Chat with PersonaAI**. The key is inside your local build only; do not deploy a build made this way publicly, use the edge function for that.
+
+## Free-tier limits (read before you launch)
+
+Google's free Gemini tier is rate limited per day per model. When I tested (Oct 2026) the full `gemini-flash-latest` allowed only about 20 requests a day and `gemini-flash-lite-latest` about 500. One PersonaAI interview takes about 6 requests, so the lite model (tried first) serves roughly 80 interviews a day on a free key. If you expect more visitors, turn on billing for the key (cost is a fraction of a cent per interview) or add more keys. When the quota is used up the chat shows "try again" and offers the classic questionnaire.

@@ -6,7 +6,7 @@ import type { AiProvider } from "../types";
 // has no billing attached; see docs/AI.md.
 const key = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 // Tried in order: when one is busy (503) or over quota (429) the next is used.
-const models = (process.env.EXPO_PUBLIC_GEMINI_MODEL || "gemini-flash-latest,gemini-flash-lite-latest,gemini-2.5-flash").split(",").map((m: string) => m.trim());
+const models = (process.env.EXPO_PUBLIC_GEMINI_MODEL || "gemini-flash-lite-latest,gemini-flash-latest").split(",").map((m: string) => m.trim());
 
 export const geminiProvider: AiProvider = {
   name: "gemini",
