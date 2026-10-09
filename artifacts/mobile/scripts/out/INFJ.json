@@ -1,0 +1,72 @@
+{
+  "guess": "INFJ",
+  "answers": 5,
+  "turn": {
+    "message": "It's been wonderful learning about how you navigate the world, and I now have a clear picture of your unique perspective.",
+    "axes": {
+      "EI": {
+        "lean": "I",
+        "confidence": 85,
+        "evidence": "needs quiet, untangles thoughts alone, retreats to a quiet corner when thrown off balance"
+      },
+      "SN": {
+        "lean": "N",
+        "confidence": 85,
+        "evidence": "starts by looking for the underlying pattern, core meaning, and big-picture trajectory"
+      },
+      "TF": {
+        "lean": "F",
+        "confidence": 80,
+        "evidence": "carefully balances honesty with protecting someone's confidence and feelings"
+      },
+      "JP": {
+        "lean": "J",
+        "confidence": 85,
+        "evidence": "rebuilds timelines to find endpoints, keeps space organized and structured"
+      }
+    },
+    "ready": true
+  },
+  "transcript": [
+    {
+      "from": "PersonaAI",
+      "text": "Hi there! I'd love to figure out your personality type through a quick chat. To start, tell me about your ideal evening after a long, demanding week."
+    },
+    {
+      "from": "INFJ",
+      "text": "Honestly, I just need absolute quiet after a week of dealing with people's heavy problems. I'll usually make a cup of oolong tea, sit by the window with a notebook to untangle my thoughts, and finally finish that chapter on renewable energy trends. By Sunday night, everything in my space has to be put back in its proper place so I can actually sleep."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "It sounds like you really value that quiet space to process things. When you're diving into a topic like renewable energy trends, what usually captures your attention most—is it the big-picture patterns and future possibilities, or the concrete details of how the tech works?"
+    },
+    {
+      "from": "INFJ",
+      "text": "I'm definitely drawn to the big-picture trajectory and how it’s going to fundamentally shift society for the better. The nuts and bolts matter, of course, but I get really energized thinking about the human impact ten or twenty years down the line."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "That long-range vision for society is fascinating. Thinking about that impact, tell me about a time you had to give someone feedback they wouldn't like. What went through your mind, and what did you actually do?"
+    },
+    {
+      "from": "INFJ",
+      "text": "I spent days turning it over in my mind, figuring out how to be completely honest without crushing their confidence. When we finally sat down, I focused on the gap between their actual potential and what they were currently doing, framing it around a shared goal we both cared about."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "That approach shows a lot of care for their feelings alongside the goal. Walk me through how you usually handle a sudden, major change to your schedule or plans."
+    },
+    {
+      "from": "INFJ",
+      "text": "It honestly throws me off balance for a minute because I like knowing how the pieces fit together. I usually take a step back, find a quiet corner to breathe, and quietly rebuild the timeline in my head so I can see the new endpoint."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "When you're exploring a complex concept just for fun, how do you usually dive into it—do you look for overarching patterns right away, or do you start with a specific detail and build outward?"
+    },
+    {
+      "from": "INFJ",
+      "text": "I always start by looking for the underlying pattern or the main philosophy driving the whole thing. Once I grasp the core meaning and where it's all heading, the smaller details just kind of fall naturally into place around it."
+    }
+  ]
+}

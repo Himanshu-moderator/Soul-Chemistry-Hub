@@ -9,7 +9,7 @@
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 // Tried in order: when one is busy (503) or over quota (429) the next is used.
-const MODELS = (Deno.env.get("GEMINI_MODELS") ?? "gemini-flash-latest,gemini-flash-lite-latest,gemini-2.0-flash").split(",").map((m) => m.trim());
+const MODELS = (Deno.env.get("GEMINI_MODELS") ?? "gemini-flash-latest,gemini-flash-lite-latest,gemini-2.5-flash").split(",").map((m) => m.trim());
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",

@@ -1,0 +1,72 @@
+{
+  "guess": "ENFJ",
+  "answers": 5,
+  "turn": {
+    "message": "Thank you so much for sharing all of that with me! I now have a really clear picture of how you navigate the world.",
+    "axes": {
+      "EI": {
+        "lean": "E",
+        "confidence": 85,
+        "evidence": "buzzed with happy energy after leading a weekend group retreat"
+      },
+      "SN": {
+        "lean": "N",
+        "confidence": 80,
+        "evidence": "loves seeing the big picture and inspiring visions first"
+      },
+      "TF": {
+        "lean": "F",
+        "confidence": 85,
+        "evidence": "prioritized the volunteer's feelings and focused on human connection"
+      },
+      "JP": {
+        "lean": "J",
+        "confidence": 85,
+        "evidence": "planned months in advance with a detailed color-coded spreadsheet"
+      }
+    },
+    "ready": true
+  },
+  "transcript": [
+    {
+      "from": "PersonaAI",
+      "text": "Hi there! Let's figure out how your mind works through a quick chat. To start off, tell me about the last time you were around a lot of people for a long time. How did you feel afterwards?"
+    },
+    {
+      "from": "ENFJ",
+      "text": "Oh, I was actually leading a weekend retreat for my community garden group last month, and by Sunday night I was just buzzing with so much happy energy. Seeing everyone finally click and share their seedling tips felt amazing, though I definitely needed a quiet cup of chamomile tea by myself on Monday morning to decompress!"
+    },
+    {
+      "from": "PersonaAI",
+      "text": "It sounds like that community garden retreat was deeply rewarding! When your mind wanders and nothing is demanding your attention, what kind of topics or thoughts do you usually find yourself drifting toward?"
+    },
+    {
+      "from": "ENFJ",
+      "text": "I usually catch myself thinking about how to bring people together for our next big neighborhood potluck or brainstorming ways to help the shy new neighbor feel more included. Sometimes I'm picturing how we can completely transform the empty lot down the street into a bustling community orchard by next spring."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "Transforming that empty lot into an orchard sounds like a wonderful vision. Tell me about a time when you had to give someone feedback they wouldn't like. What went through your mind, and what did you actually do?"
+    },
+    {
+      "from": "ENFJ",
+      "text": "Oh, that's always so tough because I really care about keeping people's feelings intact. Last month, I had to tell a volunteer that their event setup wasn't quite working, so I started by praising their amazing enthusiasm before gently walking through a clearer timeline together so we could finish strong without the stress."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "It's so kind of you to balance encouragement with gentle guidance like that. Walk me through how you handled your last big project, event, or trip from the initial idea all the way to the finish line."
+    },
+    {
+      "from": "ENFJ",
+      "text": "Oh, I started planning our neighborhood block party months in advance by making a detailed color-coded spreadsheet for every single activity and food station. On the big day, I made sure everyone knew exactly what their role was so it flowed smoothly, and at the very end, I sent out handwritten thank-you notes to lock in that warm feeling of closure."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "When you are working through a complex idea or puzzle in your mind, do you prefer to sketch out the big picture and overarching themes first, or do you like to map out all the specific, step-by-step details right away?"
+    },
+    {
+      "from": "ENFJ",
+      "text": "I definitely love seeing the big picture first, like picturing how wonderful the final event will look and feel for everyone involved. Once I have that inspiring vision locked in, though, I immediately jump to mapping out all the concrete steps and deadlines so we actually reach the finish line smoothly."
+    }
+  ]
+}

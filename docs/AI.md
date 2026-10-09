@@ -28,7 +28,7 @@ make it accurate:
 1. One open, story-based question at a time. No multiple choice, no "are you an introvert?".
 2. Each question is chosen to reveal several axes at once and targets the weakest one.
 3. The model returns JSON with a lean and a confidence (0 to 100) for each axis.
-4. **The app, not the model, decides when to stop** (`typerProtocol.ts`): never before 4
+4. **The app, not the model, decides when to stop** (`typerProtocol.ts`): never before 5
    answers, never after 7, and otherwise only when every axis is at 75 or more. If the model
    says it is done too early it is sent back for another question.
 5. The final type is computed in code from the four leans; the result screen shows the

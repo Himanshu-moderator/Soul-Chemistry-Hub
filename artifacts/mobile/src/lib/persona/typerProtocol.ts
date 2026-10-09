@@ -4,7 +4,7 @@ import { AXES, type Axis, type Letter } from "@/lib/mbti";
 // proposes; this file decides. The final type is always computed here from the
 // model's per-dichotomy reads, never taken on trust from free text.
 
-export const MIN_ANSWERS = 4; // never finish before hearing this many answers
+export const MIN_ANSWERS = 5; // never finish before hearing this many answers
 export const MAX_ANSWERS = 7; // never ask more than this many questions
 export const CONFIDENT = 75; // every dichotomy needs at least this much confidence
 

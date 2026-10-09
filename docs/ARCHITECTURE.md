@@ -112,7 +112,7 @@ On the web, every sky animation is a CSS animation (`components/cosmic/motion.ts
 Two routes, both in onboarding (details and your setup steps in [`docs/AI.md`](AI.md)):
 
 - **Classic questionnaire**: `lib/mbti` + `steps/QuizStep.tsx`. 32 statements on a five-point scale, up to 40 when an axis is too close to call. Pure scoring, no network.
-- **PersonaAI chat**: `lib/persona` + `services/ai` + `hooks/usePersonaTyper.ts` + `steps/AiChatStep.tsx`. A real conversation with a language model. The model proposes a lean and confidence per axis each turn; `typerProtocol.ts` decides when to stop (4 to 7 answers, every axis at 75+), and the type is computed in code.
+- **PersonaAI chat**: `lib/persona` + `services/ai` + `hooks/usePersonaTyper.ts` + `steps/AiChatStep.tsx`. A real conversation with a language model. The model proposes a lean and confidence per axis each turn; `typerProtocol.ts` decides when to stop (5 to 7 answers, every axis at 75+), and the type is computed in code.
 
 ## Soul deck, requests and Superchat
 

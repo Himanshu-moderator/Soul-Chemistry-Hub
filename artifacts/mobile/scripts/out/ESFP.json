@@ -1,0 +1,72 @@
+{
+  "guess": "ESFP",
+  "answers": 5,
+  "turn": {
+    "message": "I've really enjoyed chatting with you—I now have a clear picture of how you navigate the world!",
+    "axes": {
+      "EI": {
+        "lean": "E",
+        "confidence": 90,
+        "evidence": "talks to strangers at red lights and seeks out vibrant, social environments"
+      },
+      "SN": {
+        "lean": "S",
+        "confidence": 80,
+        "evidence": "focused on tangible, sensory experiences like food trucks, hot sauces, and immediate activities"
+      },
+      "TF": {
+        "lean": "F",
+        "confidence": 75,
+        "evidence": "focuses on personal harmony, keeping relationships light, and repairing mistakes directly"
+      },
+      "JP": {
+        "lean": "P",
+        "confidence": 90,
+        "evidence": "embraces zero plans, last-minute packing, and spontaneity"
+      }
+    },
+    "ready": true
+  },
+  "transcript": [
+    {
+      "from": "PersonaAI",
+      "text": "Hi there! I'd love to chat and figure out how your mind works. To start us off: after a long, demanding week, what does your ideal evening look like?"
+    },
+    {
+      "from": "ESFP",
+      "text": "Oh, long weeks are the worst—gotta shake that off immediately! I’d hit up this downtown rooftop bar with a live band and grab a cold margarita the second I clock out. Zero plans, just seeing who's around, dancing under the lights, and letting the night take me wherever it goes!"
+    },
+    {
+      "from": "PersonaAI",
+      "text": "That sounds like such an electric way to decompress! When your mind wanders and nothing is demanding your attention, what kind of things do you find yourself thinking about?"
+    },
+    {
+      "from": "ESFP",
+      "text": "Honestly, I barely sit still long enough for my mind to wander, but when it does, it's usually daydreaming about a last-minute weekend road trip to the beach or wishing I was at that outdoor concert down the street. Who has time to overthink when there's so much fun stuff happening right now?"
+    },
+    {
+      "from": "PersonaAI",
+      "text": "You really love staying right in the action! Tell me about a time you had to give someone news they wouldn't like. What went through your mind, and what did you actually do?"
+    },
+    {
+      "from": "ESFP",
+      "text": "Oh man, I am the worst at heavy conversations—I totally sweat through my shirt just thinking about it! When I had to tell my roommate I accidentally dented her favorite surfboard, I just blurted it out immediately over takeout pizza and offered to pay for repairs with my weekend cash. No use beating around the bush or overcomplicating things; just rip the band-aid off and make it right!"
+    },
+    {
+      "from": "PersonaAI",
+      "text": "Rip the band-aid off and make it right—I love that direct approach! Walk me through how you handled your last big trip, move, or deadline."
+    },
+    {
+      "from": "ESFP",
+      "text": "Oh, you do *not* want to see my packing style—it’s pure chaos right up until the Uber arrives! For my last beach trip, I literally threw a bikini, some cutoff shorts, and a toothbrush into a duffel bag ten minutes before leaving, and just figured out a place to sleep once we hit the coast."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "Before we wrap up, tell me about something specific you've been curious about lately. What was it, and why did it catch your attention?"
+    },
+    {
+      "from": "ESFP",
+      "text": "Oh, I've been totally obsessed with finding the best street tacos in the city lately! A guy at a red light last week told me about this sketchy-looking food truck behind an auto shop, and now I'm on a mission to taste-test my way through every single hot sauce they have."
+    }
+  ]
+}

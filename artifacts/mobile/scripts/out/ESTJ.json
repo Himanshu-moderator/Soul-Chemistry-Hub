@@ -1,0 +1,72 @@
+{
+  "guess": "ESTJ",
+  "answers": 5,
+  "turn": {
+    "message": "I now have a clear picture of how you navigate your projects and everyday life. Thank you so much for chatting with me!",
+    "axes": {
+      "EI": {
+        "lean": "E",
+        "confidence": 75,
+        "evidence": "Felt energized after hosting a large neighborhood block party and interacting with crowds"
+      },
+      "SN": {
+        "lean": "S",
+        "confidence": 80,
+        "evidence": "Relies on step-by-step manuals, concrete instructions, and practical hands-on testing"
+      },
+      "TF": {
+        "lean": "T",
+        "confidence": 75,
+        "evidence": "Prefers hard facts and direct problem-solving without sugarcoating"
+      },
+      "JP": {
+        "lean": "J",
+        "confidence": 90,
+        "evidence": "Uses strict timelines, color-coded spreadsheets, and advance scheduling for everything"
+      }
+    },
+    "ready": true
+  },
+  "transcript": [
+    {
+      "from": "PersonaAI",
+      "text": "Hi there! Let's figure out how your mind works through a quick chat. To start off, when your mind wanders and nothing demands your attention, what do you find yourself thinking about?"
+    },
+    {
+      "from": "ESTJ",
+      "text": "Usually, I'm mentally checking off the grocery list for my Tuesday meal prep or tweaking the itinerary for our upcoming family reunion. Honestly, I don't leave much room for empty daydreams because I like keeping my projects moving forward."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "It sounds like you really value keeping things organized and moving forward. Tell me about the last time you were around a lot of people for a long time—how did you feel afterwards?"
+    },
+    {
+      "from": "ESTJ",
+      "text": "Oh, I loved it—we hosted our annual neighborhood block party this past Saturday, and I was in my element managing the grill schedule and chatting with everyone. Afterwards, I just felt energized and immediately started drafting the thank-you notes and planning next year's layout."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "You really thrive on the energy of an event and love taking charge of the details! Tell me about a time you had to give someone feedback or news they wouldn't like. What went through your mind and what did you do?"
+    },
+    {
+      "from": "ESTJ",
+      "text": "One of our team leads was consistently missing project deadlines, so I pulled her aside on Monday morning and laid out the exact timeline she needed to meet. There's no point sugarcoating it; I just gave her the hard facts and the new schedule so we could fix the problem and get back on track immediately."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "Thanks for sharing how you handled that direct conversation. When you plan a major family trip or move, walk me through how you actually make it happen from start to finish."
+    },
+    {
+      "from": "ESTJ",
+      "text": "I start by creating a color-coded spreadsheet with strict deadlines for every single task, from booking flights to packing boxes. Once the schedule is set, I delegate specific jobs to everyone involved and check in daily to make sure we're all staying ahead of the timeline."
+    },
+    {
+      "from": "PersonaAI",
+      "text": "When you try to understand how something complex works for the first time, like a new piece of technology or a complicated recipe, how do you usually go about figuring it out?"
+    },
+    {
+      "from": "ESTJ",
+      "text": "I skip right past the fluff and go straight to the instruction manual to read the step-by-step rules. Then I test it out practically, following the established sequence until I've got the process down cold."
+    }
+  ]
+}
