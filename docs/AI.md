@@ -104,3 +104,17 @@ GEMINI_KEY=your-key node scripts/simulate-interviews.cjs --save   # 8 types; --a
 ```
 
 PowerShell: `$env:GEMINI_KEY="your-key"; node scripts/simulate-interviews.cjs`. The key is read from the environment only. Run it after changing `typerPrompt.ts` or `typerProtocol.ts`.
+
+## One-script deploy (Windows PowerShell)
+
+After creating a free Supabase project, run `.\supabase\deploy-persona-ai.ps1` from the repo root. It asks for the project ref and your Gemini key (hidden), logs in, stores the key as a server secret and publishes the function.
+
+## Try PersonaAI on your own computer first
+
+Put the key in `artifacts/mobile/.env` (this file is git-ignored, so it is never pushed):
+
+```
+EXPO_PUBLIC_GEMINI_API_KEY=your-key
+```
+
+Then `npx expo start --web`, tap **Try the demo**, and choose **Chat with PersonaAI**. The key is inside your local build only; do not deploy a build made this way publicly, use the edge function for that.
