@@ -104,6 +104,10 @@ Row Level Security is on for every table, and the app only ever uses the public 
 
 Without these values the app still works: it shows the demo only.
 
+### If sign-up says "Couldn't reach the server"
+
+A free Supabase project pauses after about a week without activity. Open the project in the Supabase dashboard and press **Restore project** (it is back in a few minutes). A daily GitHub Action, [`keep-supabase-awake.yml`](.github/workflows/keep-supabase-awake.yml), pings the project so this should not happen again. If you fork the repo, put your own project URL and key in that file.
+
 ## Tech stack
 
 | | |
